@@ -6,6 +6,7 @@ import { AiAccessSummary } from "@/widgets/ai-access";
 interface PricingPageProps {
   hasSavedApiKey: boolean;
   hasProAccess: boolean;
+  onOpenSettings: () => void;
   onActivateProAccess: () => void;
   onDeactivateProAccess: () => void;
 }
@@ -13,6 +14,7 @@ interface PricingPageProps {
 export function PricingPage({
   hasSavedApiKey,
   hasProAccess,
+  onOpenSettings,
   onActivateProAccess,
   onDeactivateProAccess
 }: PricingPageProps) {
@@ -65,6 +67,8 @@ export function PricingPage({
       <AiAccessSummary
         hasSavedApiKey={hasSavedApiKey}
         hasProAccess={hasProAccess}
+        onOpenSettings={onOpenSettings}
+        onActivateProAccess={onActivateProAccess}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

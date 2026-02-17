@@ -9,6 +9,7 @@ interface SettingsPageProps {
   userEmail: string;
   hasSavedApiKey: boolean;
   hasProAccess: boolean;
+  onActivateProAccess: () => void;
   onSaveApiKey: (apiKey: string) => void;
   onClearApiKey: () => void;
 }
@@ -17,6 +18,7 @@ export function SettingsPage({
   userEmail,
   hasSavedApiKey,
   hasProAccess,
+  onActivateProAccess,
   onSaveApiKey,
   onClearApiKey
 }: SettingsPageProps) {
@@ -43,6 +45,7 @@ export function SettingsPage({
       <AiAccessSummary
         hasSavedApiKey={hasSavedApiKey}
         hasProAccess={hasProAccess}
+        onActivateProAccess={onActivateProAccess}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

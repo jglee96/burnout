@@ -1,14 +1,19 @@
 import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
 interface AiAccessSummaryProps {
   hasSavedApiKey: boolean;
   hasProAccess: boolean;
+  onOpenSettings?: () => void;
+  onActivateProAccess?: () => void;
 }
 
 export function AiAccessSummary({
   hasSavedApiKey,
-  hasProAccess
+  hasProAccess,
+  onOpenSettings,
+  onActivateProAccess
 }: AiAccessSummaryProps) {
   return (
     <Card className="border-slate-200/90 bg-white/90">
@@ -30,6 +35,17 @@ export function AiAccessSummary({
           <p className="text-sm text-calm">
             본인 API 키를 입력해 AI 상세 평가를 사용합니다.
           </p>
+          {onOpenSettings && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onOpenSettings}
+              aria-label="AI 설정으로 이동"
+            >
+              설정으로 이동
+            </Button>
+          )}
         </section>
 
         <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
@@ -42,6 +58,17 @@ export function AiAccessSummary({
           <p className="text-sm text-calm">
             결제 상태로 권한을 받아 키 없이 AI 상세 평가를 사용합니다.
           </p>
+          {!hasProAccess && onActivateProAccess && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onActivateProAccess}
+              aria-label="Pro 즉시 활성화"
+            >
+              Pro 활성화
+            </Button>
+          )}
         </section>
       </CardContent>
     </Card>

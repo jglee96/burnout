@@ -184,8 +184,16 @@ export function TaskBoard({
               dragOverStatus === section.status && "border-sky-300 bg-sky-50/60"
             )}
           >
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle>{section.title}</CardTitle>
+              <span
+                className={cn(
+                  "rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-calm transition-colors",
+                  dragOverStatus === section.status && "bg-sky-100 text-sky-700"
+                )}
+              >
+                {dragOverStatus === section.status ? "여기로 이동" : "드롭 영역"}
+              </span>
             </CardHeader>
             <CardContent className="min-h-40 space-y-3">
               {tasks

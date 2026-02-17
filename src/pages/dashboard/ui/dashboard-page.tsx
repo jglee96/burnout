@@ -654,6 +654,10 @@ export function DashboardPage() {
         <PricingPage
           hasSavedApiKey={Boolean(storedAiKey)}
           hasProAccess={hasProAccess}
+          onOpenSettings={() => {
+            setActiveSection("settings");
+            navigate("/app/settings");
+          }}
           onActivateProAccess={onActivateProAccess}
           onDeactivateProAccess={onDeactivateProAccess}
         />
@@ -673,6 +677,7 @@ export function DashboardPage() {
             userEmail={authUserEmail}
             hasSavedApiKey={Boolean(storedAiKey)}
             hasProAccess={hasProAccess}
+            onActivateProAccess={onActivateProAccess}
             onSaveApiKey={onSaveAiKey}
             onClearApiKey={onClearAiKey}
           />
