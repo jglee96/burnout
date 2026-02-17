@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, CircleUserRound } from "lucide-react";
+import { useAppLocale } from "@/shared/lib/i18n/locale";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
@@ -25,8 +26,45 @@ export function AppHeader({
   onSignOut,
   onSignIn
 }: AppHeaderProps) {
+  const { locale } = useAppLocale();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuWrapRef = useRef<HTMLDivElement | null>(null);
+  const copy =
+    locale === "ko"
+      ? {
+          signIn: "로그인",
+          signInAria: "Google 로그인",
+          profileMenuAria: "프로필 메뉴 열기",
+          accountInfo: "계정 정보",
+          settings: "개인 설정",
+          pricing: "요금제",
+          signOut: "로그아웃",
+          pro: "Pro",
+          free: "Free"
+        }
+      : locale === "ja"
+        ? {
+            signIn: "ログイン",
+            signInAria: "Googleログイン",
+            profileMenuAria: "プロフィールメニューを開く",
+            accountInfo: "アカウント情報",
+            settings: "個人設定",
+            pricing: "料金プラン",
+            signOut: "ログアウト",
+            pro: "Pro",
+            free: "Free"
+          }
+        : {
+            signIn: "Sign in",
+            signInAria: "Sign in with Google",
+            profileMenuAria: "Open profile menu",
+            accountInfo: "Account",
+            settings: "Settings",
+            pricing: "Pricing",
+            signOut: "Sign out",
+            pro: "Pro",
+            free: "Free"
+          };
 
   useEffect(() => {
     function onDocumentClick(event: MouseEvent) {
@@ -54,7 +92,7 @@ export function AppHeader({
           </p>
           {isAuthenticated && (
             <Badge variant={hasProAccess ? "warning" : "secondary"}>
-              {hasProAccess ? "Pro" : "Free"}
+              {hasProAccess ? copy.pro : copy.free}
             </Badge>
           )}
         </div>
@@ -66,9 +104,9 @@ export function AppHeader({
               size="sm"
               onClick={onSignIn}
               disabled={isAuthBusy}
-              aria-label="Google 로그인"
+              aria-label={copy.signInAria}
             >
-              로그인
+              {copy.signIn}
             </Button>
           ) : (
             <div className="relative" ref={menuWrapRef}>
@@ -76,7 +114,7 @@ export function AppHeader({
                 type="button"
                 className="inline-flex h-9 items-center gap-1 rounded-full border border-slate-300 bg-white px-3 text-sm font-medium text-ink hover:bg-slate-50"
                 onClick={() => setIsMenuOpen((current) => !current)}
-                aria-label="프로필 메뉴 열기"
+                aria-label={copy.profileMenuAria}
               >
                 <CircleUserRound className="h-4 w-4" aria-hidden />
                 <ChevronDown className="h-4 w-4" aria-hidden />
@@ -86,7 +124,7 @@ export function AppHeader({
                 <div className="absolute right-0 top-11 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-panel">
                   <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                     <p className="text-xs uppercase tracking-[0.14em] text-calm">
-                      계정 정보
+                      {copy.accountInfo}
                     </p>
                     <p className="truncate text-sm font-medium text-ink">
                       {userEmail}
@@ -101,7 +139,7 @@ export function AppHeader({
                         onOpenSettings();
                       }}
                     >
-                      개인 설정
+                      {copy.settings}
                     </button>
                     <button
                       type="button"
@@ -111,7 +149,7 @@ export function AppHeader({
                         onOpenPricing();
                       }}
                     >
-                      요금제
+                      {copy.pricing}
                     </button>
                     <button
                       type="button"
@@ -121,7 +159,7 @@ export function AppHeader({
                         onSignOut();
                       }}
                     >
-                      로그아웃
+                      {copy.signOut}
                     </button>
                   </div>
                 </div>

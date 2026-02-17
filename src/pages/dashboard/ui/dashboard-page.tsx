@@ -13,6 +13,7 @@ import { LandingPage } from "@/pages/landing";
 import { PricingPage } from "@/pages/pricing";
 import { SettingsPage } from "@/pages/settings";
 import { getAiDetailedSuggestion } from "@/shared/api/ai-evaluation-client";
+import { useAppLocale } from "@/shared/lib/i18n/locale";
 import { navigate } from "@/shared/lib/router/navigation";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -63,6 +64,8 @@ const AI_PRO_STORAGE_KEY = "burnout-ai-pro";
 const DAY_SESSION_STORAGE_KEY = "burnout-day-session";
 const LOCAL_AUTH_BYPASS_KEY = "burnout-local-auth-bypass";
 const TASKS_STORAGE_KEY = "burnout-tasks";
+const BRAND_CATCHPHRASE =
+  "Keep one clear priority, cap in-progress work, and review completion momentum before overload builds up.";
 const authClientModulePromise = import("@/shared/api/auth-client");
 const supabaseClientModulePromise = import("@/shared/api/supabase-client");
 
@@ -202,6 +205,7 @@ function readLocalAuthBypassFlag(): boolean {
 }
 
 export function DashboardPage() {
+  const { locale } = useAppLocale();
   const [daySessionState, setDaySessionState] = useState<DaySessionState>(
     readStoredDaySessionState
   );
@@ -223,6 +227,85 @@ export function DashboardPage() {
   const [dayEndReport, setDayEndReport] = useState<DayEvaluationReport | null>(
     null
   );
+  const copy =
+    locale === "ko"
+      ? {
+          authInitError:
+            "인증 초기화에 실패했습니다. Supabase URL/Publishable Key를 점검하세요.",
+          authSignInError:
+            "Google 로그인에 실패했습니다. OAuth 설정을 확인하세요.",
+          authSignOutError: "로그아웃에 실패했습니다. 잠시 후 다시 시도하세요.",
+          checkingAuth: "로그인 상태를 확인하는 중입니다.",
+          preLoginDescription:
+            "업무 시작 전 로그인하고, 퇴근 전 냉정한 리뷰를 남겨 번아웃을 예방하세요.",
+          sessionBeforeWork: "오늘 업무를 시작할 준비 단계입니다.",
+          sessionWorking:
+            "업무 진행 중입니다. Doing을 최소화해 집중을 유지하세요.",
+          sessionAfterWork:
+            "업무 마무리 상태입니다. 평가를 확인하고 다음 날을 준비하세요.",
+          stateBeforeWork: "하루 시작 전",
+          stateWorking: "근무 중",
+          stateAfterWork: "하루 마무리",
+          finishHint:
+            "퇴근 전 하루를 마감하면, 완료/미완료 비율과 위험도를 기준으로 내일 개선 계획을 제안합니다.",
+          finishDay: "하루 마무리하기",
+          resetHint:
+            "종료 평가는 새로고침으로 초기화되었습니다. 다시 시작해서 오늘 작업을 이어갈 수 있습니다.",
+          restart: "다시 시작하기",
+          settingsTitle: "개인 설정"
+        }
+      : locale === "ja"
+        ? {
+            authInitError:
+              "認証の初期化に失敗しました。Supabase URL/Publishable Key を確認してください。",
+            authSignInError:
+              "Googleログインに失敗しました。OAuth設定を確認してください。",
+            authSignOutError:
+              "ログアウトに失敗しました。しばらくしてから再試行してください。",
+            checkingAuth: "ログイン状態を確認しています。",
+            preLoginDescription:
+              "業務開始前にログインし、退勤前に客観レビューを残してバーンアウトを防ぎましょう。",
+            sessionBeforeWork: "今日の業務を開始する準備段階です。",
+            sessionWorking:
+              "業務中です。Doingを最小化して集中を維持してください。",
+            sessionAfterWork:
+              "業務終了状態です。評価を確認して翌日の準備をしてください。",
+            stateBeforeWork: "開始前",
+            stateWorking: "勤務中",
+            stateAfterWork: "終了後",
+            finishHint:
+              "退勤前に1日を締めると、完了/未完了比率とリスクに基づいて明日の改善計画を提案します。",
+            finishDay: "1日を締める",
+            resetHint:
+              "終了評価はリロードで初期化されました。再開して今日の作業を引き継げます。",
+            restart: "再開する",
+            settingsTitle: "個人設定"
+          }
+        : {
+            authInitError:
+              "Failed to initialize authentication. Check Supabase URL/Publishable Key.",
+            authSignInError:
+              "Google sign-in failed. Check your OAuth configuration.",
+            authSignOutError: "Sign-out failed. Please try again shortly.",
+            checkingAuth: "Checking your sign-in status.",
+            preLoginDescription:
+              "Sign in before work and leave an objective review before you leave to prevent burnout.",
+            sessionBeforeWork: "You're in pre-start mode for today.",
+            sessionWorking:
+              "You are in work mode. Keep Doing minimal to protect focus.",
+            sessionAfterWork:
+              "You are in wrap-up mode. Review today and prepare tomorrow.",
+            stateBeforeWork: "Before work",
+            stateWorking: "Working",
+            stateAfterWork: "After work",
+            finishHint:
+              "When you close the day before leaving, the app proposes tomorrow's improvements using completion ratio and risk.",
+            finishDay: "Finish day",
+            resetHint:
+              "End-of-day review was reset after refresh. You can restart and continue today's work.",
+            restart: "Start again",
+            settingsTitle: "Settings"
+          };
   const canUseLocalBypass = import.meta.env.VITE_APP_ENV !== "production";
 
   const aiAccessMode: AiAccessMode = hasProAccess
@@ -238,8 +321,8 @@ export function DashboardPage() {
   ).length;
 
   const burnoutReport = useMemo(
-    () => calculateBurnoutRisk({ tasks, completedTodayCount }),
-    [tasks, completedTodayCount]
+    () => calculateBurnoutRisk({ tasks, completedTodayCount, locale }),
+    [tasks, completedTodayCount, locale]
   );
 
   const onCreateTask = ({
@@ -290,7 +373,8 @@ export function DashboardPage() {
     const report: DayEvaluationReport = evaluateDay({
       tasks,
       completedTodayCount,
-      burnoutRiskReport: burnoutReport
+      burnoutRiskReport: burnoutReport,
+      locale
     });
     setDayEndReport(report);
     setDaySessionState("after-work");
@@ -306,7 +390,8 @@ export function DashboardPage() {
       tasks,
       completedTodayCount,
       burnoutRiskReport: burnoutReport,
-      dayEvaluationReport: report
+      dayEvaluationReport: report,
+      locale
     })
       .then((aiSuggestion) => {
         setDayEndReport((current) =>
@@ -417,9 +502,7 @@ export function DashboardPage() {
         }
         setAuthStatus("error");
         setAuthUserEmail("");
-        setAuthMessage(
-          "인증 초기화에 실패했습니다. Supabase URL/Publishable Key를 점검하세요."
-        );
+        setAuthMessage(copy.authInitError);
       }
     }
 
@@ -429,7 +512,7 @@ export function DashboardPage() {
       isMounted = false;
       unsubscribe?.();
     };
-  }, [isLocalAuthBypass]);
+  }, [copy.authInitError, isLocalAuthBypass]);
 
   const onSignInWithGoogle = async () => {
     setIsAuthBusy(true);
@@ -439,7 +522,7 @@ export function DashboardPage() {
       await signInWithGoogle();
     } catch {
       setAuthStatus("error");
-      setAuthMessage("Google 로그인에 실패했습니다. OAuth 설정을 확인하세요.");
+      setAuthMessage(copy.authSignInError);
     } finally {
       setIsAuthBusy(false);
     }
@@ -472,7 +555,7 @@ export function DashboardPage() {
       setAuthUserEmail("");
     } catch {
       setAuthStatus("error");
-      setAuthMessage("로그아웃에 실패했습니다. 잠시 후 다시 시도하세요.");
+      setAuthMessage(copy.authSignOutError);
     } finally {
       setIsAuthBusy(false);
     }
@@ -497,9 +580,9 @@ export function DashboardPage() {
           onSignOut={onSignOutGoogle}
           onSignIn={onSignInWithGoogle}
         />
-        <Card>
+          <Card>
           <CardContent className="p-5 text-sm text-calm">
-            로그인 상태를 확인하는 중입니다.
+            {copy.checkingAuth}
           </CardContent>
         </Card>
       </main>
@@ -520,8 +603,7 @@ export function DashboardPage() {
             Burnout Guard
           </h1>
           <p className="max-w-2xl text-sm text-calm">
-            업무 시작 전 로그인하고, 퇴근 전 냉정한 리뷰를 남겨 번아웃을
-            예방하세요.
+            {copy.preLoginDescription}
           </p>
         </header>
         <LandingPage
@@ -564,8 +646,7 @@ export function DashboardPage() {
               Burnout Guard App
             </h1>
             <p className="max-w-2xl text-sm text-calm">
-              Keep one clear priority, cap in-progress work, and review
-              completion momentum before overload builds up.
+              {BRAND_CATCHPHRASE}
             </p>
           </header>
 
@@ -575,13 +656,17 @@ export function DashboardPage() {
             <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-calm">
                 {daySessionState === "before-work" &&
-                  "오늘 업무를 시작할 준비 단계입니다."}
+                  copy.sessionBeforeWork}
                 {daySessionState === "working" &&
-                  "업무 진행 중입니다. Doing을 최소화해 집중을 유지하세요."}
+                  copy.sessionWorking}
                 {daySessionState === "after-work" &&
-                  "업무 마무리 상태입니다. 평가를 확인하고 다음 날을 준비하세요."}
+                  copy.sessionAfterWork}
               </p>
-              <Badge variant="secondary">{daySessionState}</Badge>
+              <Badge variant="secondary">
+                {daySessionState === "before-work" && copy.stateBeforeWork}
+                {daySessionState === "working" && copy.stateWorking}
+                {daySessionState === "after-work" && copy.stateAfterWork}
+              </Badge>
             </CardContent>
           </Card>
 
@@ -604,16 +689,15 @@ export function DashboardPage() {
               <Card>
                 <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-calm">
-                    퇴근 전 하루를 마감하면, 완료/미완료 비율과 위험도를
-                    기준으로 내일 개선 계획을 제안합니다.
+                    {copy.finishHint}
                   </p>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={onFinishDay}
-                    aria-label="하루 마무리하기"
+                    aria-label={copy.finishDay}
                   >
-                    하루 마무리하기
+                    {copy.finishDay}
                   </Button>
                 </CardContent>
               </Card>
@@ -633,16 +717,15 @@ export function DashboardPage() {
             <Card>
               <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-calm">
-                  종료 평가는 새로고침으로 초기화되었습니다. 다시 시작해서 오늘
-                  작업을 이어갈 수 있습니다.
+                  {copy.resetHint}
                 </p>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onPrepareNextDay}
-                  aria-label="다시 시작하기"
+                  aria-label={copy.restart}
                 >
-                  다시 시작하기
+                  {copy.restart}
                 </Button>
               </CardContent>
             </Card>
@@ -670,7 +753,7 @@ export function DashboardPage() {
               Workspace
             </Badge>
             <h1 className="font-['Avenir_Next','Segoe_UI',sans-serif] text-3xl font-semibold leading-tight sm:text-4xl">
-              개인 설정
+              {copy.settingsTitle}
             </h1>
           </header>
           <SettingsPage

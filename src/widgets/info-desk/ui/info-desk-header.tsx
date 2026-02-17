@@ -1,15 +1,48 @@
 import { useEffect, useMemo, useState } from "react";
 import { CloudSun, Clock3, CalendarDays } from "lucide-react";
 import { fetchWeatherSnapshot } from "@/shared/api/weather-client";
+import { toIntlLocale, useAppLocale } from "@/shared/lib/i18n/locale";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent } from "@/shared/ui/card";
 
 type WeatherStatus = "idle" | "loading" | "ready" | "denied" | "error";
 
 export function InfoDeskHeader() {
+  const { locale } = useAppLocale();
   const [now, setNow] = useState(() => new Date());
   const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>("idle");
-  const [weatherLabel, setWeatherLabel] = useState("날씨 로딩 전");
+  const copy =
+    locale === "ko"
+      ? {
+          loading: "날씨 로딩 중",
+          geoUnsupported: "위치 기능 미지원",
+          weatherFailed: "날씨 데이터를 불러오지 못했습니다",
+          geoDenied: "위치 권한 없음",
+          feelsLike: "체감",
+          infoDesk: "Info Desk"
+        }
+      : locale === "ja"
+        ? {
+            loading: "天気を読み込み中",
+            geoUnsupported: "位置情報が未対応です",
+            weatherFailed: "天気データを取得できませんでした",
+            geoDenied: "位置情報の許可がありません",
+            feelsLike: "体感",
+            infoDesk: "Info Desk"
+          }
+        : {
+            loading: "Loading weather",
+            geoUnsupported: "Geolocation is not supported",
+            weatherFailed: "Could not load weather data",
+            geoDenied: "Location permission denied",
+            feelsLike: "Feels like",
+            infoDesk: "Info Desk"
+          };
+  const [weatherLabel, setWeatherLabel] = useState(copy.loading);
+
+  useEffect(() => {
+    setWeatherLabel(copy.loading);
+  }, [copy.loading]);
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
@@ -22,7 +55,7 @@ export function InfoDeskHeader() {
   useEffect(() => {
     if (!navigator.geolocation) {
       setWeatherStatus("error");
-      setWeatherLabel("위치 기능 미지원");
+      setWeatherLabel(copy.geoUnsupported);
       return;
     }
 
@@ -32,45 +65,46 @@ export function InfoDeskHeader() {
         try {
           const weather = await fetchWeatherSnapshot({
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+            longitude: position.coords.longitude,
+            locale
           });
           setWeatherStatus("ready");
           setWeatherLabel(
-            `${weather.conditionLabel} ${Math.round(weather.temperatureC)}°C (체감 ${Math.round(weather.apparentTemperatureC)}°C)`
+            `${weather.conditionLabel} ${Math.round(weather.temperatureC)}°C (${copy.feelsLike} ${Math.round(weather.apparentTemperatureC)}°C)`
           );
         } catch {
           setWeatherStatus("error");
-          setWeatherLabel("날씨 데이터를 불러오지 못했습니다");
+          setWeatherLabel(copy.weatherFailed);
         }
       },
       () => {
         setWeatherStatus("denied");
-        setWeatherLabel("위치 권한 없음");
+        setWeatherLabel(copy.geoDenied);
       },
       { timeout: 8000 }
     );
-  }, []);
+  }, [copy.feelsLike, copy.geoDenied, copy.geoUnsupported, copy.weatherFailed, locale]);
 
   const dateLabel = useMemo(
     () =>
-      new Intl.DateTimeFormat("ko-KR", {
+      new Intl.DateTimeFormat(toIntlLocale(locale), {
         year: "numeric",
         month: "long",
         day: "numeric",
         weekday: "long"
       }).format(now),
-    [now]
+    [locale, now]
   );
 
   const timeLabel = useMemo(
     () =>
-      new Intl.DateTimeFormat("ko-KR", {
+      new Intl.DateTimeFormat(toIntlLocale(locale), {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
         hour12: false
       }).format(now),
-    [now]
+    [locale, now]
   );
 
   return (
@@ -90,7 +124,7 @@ export function InfoDeskHeader() {
           <Badge
             variant={weatherStatus === "error" ? "destructive" : "secondary"}
           >
-            Info Desk
+            {copy.infoDesk}
           </Badge>
         </div>
       </CardContent>

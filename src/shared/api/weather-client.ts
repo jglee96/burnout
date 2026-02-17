@@ -1,3 +1,5 @@
+import type { AppLocale } from "@/shared/lib/i18n/locale";
+
 export interface WeatherSnapshot {
   temperatureC: number;
   apparentTemperatureC: number;
@@ -37,35 +39,70 @@ function isOpenMeteoResponse(data: unknown): data is OpenMeteoResponse {
   );
 }
 
-function weatherCodeToLabel(code: number): string {
+function weatherCodeToLabel(code: number, locale: AppLocale): string {
+  const labels =
+    locale === "ko"
+      ? {
+          clear: "맑음",
+          mostlyClear: "대체로 맑음",
+          cloudy: "흐림",
+          fog: "안개",
+          rain: "비",
+          snow: "눈",
+          thunder: "뇌우",
+          unknown: "날씨 데이터 확인 중"
+        }
+      : locale === "ja"
+        ? {
+            clear: "晴れ",
+            mostlyClear: "概ね晴れ",
+            cloudy: "くもり",
+            fog: "霧",
+            rain: "雨",
+            snow: "雪",
+            thunder: "雷雨",
+            unknown: "天気データを確認中"
+          }
+        : {
+            clear: "Clear",
+            mostlyClear: "Mostly clear",
+            cloudy: "Cloudy",
+            fog: "Fog",
+            rain: "Rain",
+            snow: "Snow",
+            thunder: "Thunderstorm",
+            unknown: "Checking weather data"
+          };
+
   if (code === 0) {
-    return "맑음";
+    return labels.clear;
   }
   if (code === 1 || code === 2) {
-    return "대체로 맑음";
+    return labels.mostlyClear;
   }
   if (code === 3) {
-    return "흐림";
+    return labels.cloudy;
   }
   if (code >= 45 && code <= 48) {
-    return "안개";
+    return labels.fog;
   }
   if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
-    return "비";
+    return labels.rain;
   }
   if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
-    return "눈";
+    return labels.snow;
   }
   if (code >= 95) {
-    return "뇌우";
+    return labels.thunder;
   }
-  return "날씨 데이터 확인 중";
+  return labels.unknown;
 }
 
 export async function fetchWeatherSnapshot({
   latitude,
-  longitude
-}: LocationInput): Promise<WeatherSnapshot> {
+  longitude,
+  locale = "en"
+}: LocationInput & { locale?: AppLocale }): Promise<WeatherSnapshot> {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.searchParams.set("latitude", String(latitude));
   url.searchParams.set("longitude", String(longitude));
@@ -92,6 +129,6 @@ export async function fetchWeatherSnapshot({
   return {
     temperatureC: data.current.temperature_2m,
     apparentTemperatureC: data.current.apparent_temperature,
-    conditionLabel: weatherCodeToLabel(data.current.weather_code)
+    conditionLabel: weatherCodeToLabel(data.current.weather_code, locale)
   };
 }

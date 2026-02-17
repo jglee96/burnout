@@ -27,9 +27,9 @@ describe("TaskBoard drag and drop", () => {
     window.localStorage.removeItem("burnout-dnd-guide-dismissed-v1");
     render(<TaskBoard tasks={tasks} onStatusChange={vi.fn()} />);
 
-    expect(screen.getByText("카드 이동 가이드")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "드래그 가이드 닫기" }));
-    expect(screen.queryByText("카드 이동 가이드")).not.toBeInTheDocument();
+    expect(screen.getByText("Drag guide")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss drag guide" }));
+    expect(screen.queryByText("Drag guide")).not.toBeInTheDocument();
     expect(
       window.localStorage.getItem("burnout-dnd-guide-dismissed-v1")
     ).toBe("true");

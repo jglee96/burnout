@@ -8,6 +8,7 @@ import type {
 } from "@/entities/task/model/types";
 import { requestJson } from "@/shared/api/client";
 import { getClientEnv } from "@/shared/lib/env/client-env";
+import type { AppLocale } from "@/shared/lib/i18n/locale";
 
 interface AiEvaluationRequest {
   accessMode: Exclude<AiAccessMode, "none">;
@@ -16,6 +17,7 @@ interface AiEvaluationRequest {
   completedTodayCount: number;
   burnoutRiskReport: BurnoutRiskReport;
   dayEvaluationReport: DayEvaluationReport;
+  locale: AppLocale;
 }
 
 function isAiDetailedSuggestion(data: unknown): data is AIDetailedSuggestion {
@@ -39,7 +41,8 @@ export async function getAiDetailedSuggestion({
   tasks,
   completedTodayCount,
   burnoutRiskReport,
-  dayEvaluationReport
+  dayEvaluationReport,
+  locale
 }: AiEvaluationRequest): Promise<AIDetailedSuggestion> {
   const { apiBaseUrl } = getClientEnv();
   const endpoint = apiBaseUrl
@@ -60,7 +63,8 @@ export async function getAiDetailedSuggestion({
           tasks,
           completedTodayCount,
           burnoutRiskReport,
-          dayEvaluationReport
+          dayEvaluationReport,
+          locale
         })
       },
       isAiDetailedSuggestion
@@ -71,7 +75,8 @@ export async function getAiDetailedSuggestion({
       tasks,
       completedTodayCount,
       burnoutRiskReport,
-      dayEvaluationReport
+      dayEvaluationReport,
+      locale
     });
   } finally {
     window.clearTimeout(timeoutId);

@@ -19,6 +19,7 @@ interface BillingWebhookPayload {
 
 interface AiEvaluatePayload {
   accessMode?: "byok" | "pro";
+  locale?: "en" | "ko" | "ja";
   completedTodayCount?: number;
   dayEvaluationReport?: {
     metrics?: {
@@ -28,6 +29,13 @@ interface AiEvaluatePayload {
       burnoutRiskScore?: number;
     };
   };
+}
+
+function resolveLocale(input: unknown): "en" | "ko" | "ja" {
+  if (input === "ko" || input === "ja" || input === "en") {
+    return input;
+  }
+  return "en";
 }
 
 function json(data: unknown, init: ResponseInit = { status: 200 }): Response {
@@ -224,36 +232,107 @@ function buildAiSuggestion(payload: AiEvaluatePayload) {
     payload.dayEvaluationReport?.metrics?.burnoutRiskLevel ?? "moderate";
   const riskScore = payload.dayEvaluationReport?.metrics?.burnoutRiskScore ?? 0;
 
+  const locale = resolveLocale(payload.locale);
+  const copy =
+    locale === "ja"
+      ? {
+          riskActive:
+            activeCount >= 4
+              ? "未完了が多く、切替コストが蓄積しやすい状態です。"
+              : "未完了は管理可能ですが、増加傾向には注意が必要です。",
+          riskHigh:
+            highPriorityActiveCount >= 2
+              ? "高優先度の同時進行が多く、集中低下が起きやすいです。"
+              : "高優先度は少ないですが、着手時刻の固定が必要です。",
+          diagnosis: `現在のリスクは ${riskLevel}(${riskScore}) で、未完了 ${activeCount}件を基準に明日開始時の優先順位圧縮が必要です。`,
+          focus: [
+            "出勤後10分以内にTo Doを3件までに制限します。",
+            "最初の50分ブロックで完了可能タスク1件を閉じ、完了基準線を作ります。",
+            "新規依頼は既存To Doを1件外してから追加します。"
+          ],
+          schedule: [
+            "09:00-09:10 計画整理",
+            "09:10-10:00 Deep work #1",
+            "10:00-10:10 回復ブロック",
+            "14:00-14:50 Deep work #2",
+            "17:40-17:55 終了点検"
+          ],
+          stop: [
+            "Doingが2件を超えたら新規着手を中止します。",
+            "高優先度は同時1件のみ進行します。",
+            "退勤30分前は新規着手を禁止します。"
+          ]
+        }
+      : locale === "en"
+        ? {
+            riskActive:
+              activeCount >= 4
+                ? "Open tasks are high and switching costs are accumulating."
+                : "Open tasks are manageable, but the trend should be watched.",
+            riskHigh:
+              highPriorityActiveCount >= 2
+                ? "Concurrent high-priority work is likely hurting focus."
+                : "High-priority count is low, but start times should still be fixed.",
+            diagnosis: `Current risk is ${riskLevel} (${riskScore}). With ${activeCount} open tasks, compress priorities before tomorrow starts.`,
+            focus: [
+              "Within 10 minutes after start, cap To Do at three items.",
+              "In the first 50-minute block, close one finishable task to create momentum.",
+              "Add new requests only after removing one existing To Do."
+            ],
+            schedule: [
+              "09:00-09:10 plan alignment",
+              "09:10-10:00 deep work #1",
+              "10:00-10:10 recovery block",
+              "14:00-14:50 deep work #2",
+              "17:40-17:55 close-out review"
+            ],
+            stop: [
+              "Stop new starts if Doing exceeds two items.",
+              "Keep only one high-priority item in active execution.",
+              "No new starts in the last 30 minutes before end of day."
+            ]
+          }
+        : {
+            riskActive:
+              activeCount >= 4
+                ? "미완료 항목이 많아 전환 비용이 누적됩니다."
+                : "미완료 항목은 관리 가능하지만 증가 추세를 주의해야 합니다.",
+            riskHigh:
+              highPriorityActiveCount >= 2
+                ? "high 작업 동시 진행 수가 높아 집중 저하가 발생하기 쉽습니다."
+                : "high 작업 수는 낮지만 착수 시점 고정이 필요합니다.",
+            diagnosis: `현재 위험도는 ${riskLevel}(${riskScore})이며, 미완료 ${activeCount}개를 기준으로 내일 시작 시 우선순위 압축이 필요합니다.`,
+            focus: [
+              "출근 후 10분 안에 To Do를 3개로 제한합니다.",
+              "첫 50분 블록에서 완료 가능한 작업 1개를 닫아 완료 기준선을 만듭니다.",
+              "신규 요청은 기존 To Do 1개 제거 후에만 추가합니다."
+            ],
+            schedule: [
+              "09:00-09:10 계획 정리",
+              "09:10-10:00 Deep work #1",
+              "10:00-10:10 회복 블록",
+              "14:00-14:50 Deep work #2",
+              "17:40-17:55 종료 점검"
+            ],
+            stop: [
+              "Doing이 2개를 넘으면 신규 착수를 중단합니다.",
+              "high 작업은 동시 1개만 진행합니다.",
+              "퇴근 30분 전에는 신규 작업 착수를 금지합니다."
+            ]
+          };
+
   const riskDrivers = [
-    activeCount >= 4
-      ? "미완료 항목이 많아 전환 비용이 누적됩니다."
-      : "미완료 항목은 관리 가능하지만 증가 추세를 주의해야 합니다.",
-    highPriorityActiveCount >= 2
-      ? "high 작업 동시 진행 수가 높아 집중 저하가 발생하기 쉽습니다."
-      : "high 작업 수는 낮지만 착수 시점 고정이 필요합니다."
+    copy.riskActive,
+    copy.riskHigh
   ];
 
   return {
     accessMode: payload.accessMode ?? "pro",
-    diagnosis: `현재 위험도는 ${riskLevel}(${riskScore})이며, 미완료 ${activeCount}개를 기준으로 내일 시작 시 우선순위 압축이 필요합니다.`,
+    diagnosis: copy.diagnosis,
     riskDrivers,
-    tomorrowFocusPlan: [
-      "출근 후 10분 안에 To Do를 3개로 제한합니다.",
-      "첫 50분 블록에서 완료 가능한 작업 1개를 닫아 완료 기준선을 만듭니다.",
-      "신규 요청은 기존 To Do 1개 제거 후에만 추가합니다."
-    ],
-    scheduleTemplate: [
-      "09:00-09:10 계획 정리",
-      "09:10-10:00 Deep work #1",
-      "10:00-10:10 회복 블록",
-      "14:00-14:50 Deep work #2",
-      "17:40-17:55 종료 점검"
-    ],
-    stopRules: [
-      "Doing이 2개를 넘으면 신규 착수를 중단합니다.",
-      "high 작업은 동시 1개만 진행합니다.",
-      "퇴근 30분 전에는 신규 작업 착수를 금지합니다."
-    ]
+    tomorrowFocusPlan: copy.focus,
+    scheduleTemplate: copy.schedule,
+    stopRules: copy.stop
   };
 }
 

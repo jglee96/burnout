@@ -16,13 +16,13 @@ describe("TaskItem", () => {
     render(<TaskItem task={baseTask} onStatusChange={onStatusChange} />);
 
     expect(screen.getByText("Prepare weekly summary")).toBeInTheDocument();
-    expect(screen.getByText("medium")).toBeInTheDocument();
+    expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "To Do" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Doing" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Done" })).not.toBeInTheDocument();
 
     const statusSelect = screen.getByRole("combobox", {
-      name: "Prepare weekly summary 상태 변경"
+      name: "Prepare weekly summary Change status"
     });
     expect(statusSelect).toHaveValue("doing");
     fireEvent.change(statusSelect, { target: { value: "done" } });
