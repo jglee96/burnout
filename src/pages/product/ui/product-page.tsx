@@ -46,7 +46,7 @@ export function ProductPage() {
       const { signInWithGoogle } = await loadAuthClient();
       await signInWithGoogle("/app/day");
     } catch {
-      setErrorMessage("로그인에 실패했습니다. Google OAuth 설정을 확인하세요.");
+      setErrorMessage("로그인에 실패했습니다. 잠시 후 다시 시도하세요.");
       setIsSigningIn(false);
     }
   };
@@ -89,8 +89,7 @@ export function ProductPage() {
               다음 날 실행안으로 바로 전환합니다.
             </h1>
             <p className="max-w-2xl text-base text-calm">
-              Cursor Product 페이지처럼 제품 중심으로 설계된 랜딩입니다.
-              로그인하면 하루 시작 화면으로 이동하고, 작업 루프와 AI 평가를
+              로그인하면 하루 시작 화면으로 이동해, 작업 루프와 AI 평가를
               하나의 흐름으로 관리할 수 있습니다.
             </p>
             <div className="flex flex-wrap items-center gap-3">
@@ -119,7 +118,7 @@ export function ProductPage() {
 
           <Card className="bg-slate-950 text-white">
             <CardHeader>
-              <CardTitle className="text-lg">Live Loop Preview</CardTitle>
+              <CardTitle className="text-lg">Live Loop</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="rounded-xl border border-white/20 bg-white/5 p-3">

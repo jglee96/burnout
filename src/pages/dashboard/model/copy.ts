@@ -24,9 +24,8 @@ export interface DashboardCopy {
 
 const DASHBOARD_COPY: Record<AppLocale, DashboardCopy> = {
   ko: {
-    authInitError:
-      "인증 초기화에 실패했습니다. Supabase URL/Publishable Key를 점검하세요.",
-    authSignInError: "Google 로그인에 실패했습니다. OAuth 설정을 확인하세요.",
+    authInitError: "로그인 상태를 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+    authSignInError: "Google 로그인에 실패했습니다. 잠시 후 다시 시도하세요.",
     authSignOutError: "로그아웃에 실패했습니다. 잠시 후 다시 시도하세요.",
     checkingAuth: "로그인 상태를 확인하는 중입니다.",
     preLoginDescription:
@@ -46,9 +45,9 @@ const DASHBOARD_COPY: Record<AppLocale, DashboardCopy> = {
     settingsTitle: "개인 설정"
   },
   ja: {
-    authInitError:
-      "認証の初期化に失敗しました。Supabase URL/Publishable Key を確認してください。",
-    authSignInError: "Googleログインに失敗しました。OAuth設定を確認してください。",
+    authInitError: "ログイン状態を取得できませんでした。しばらくして再試行してください。",
+    authSignInError:
+      "Googleログインに失敗しました。しばらくして再試行してください。",
     authSignOutError:
       "ログアウトに失敗しました。しばらくしてから再試行してください。",
     checkingAuth: "ログイン状態を確認しています。",
@@ -70,8 +69,9 @@ const DASHBOARD_COPY: Record<AppLocale, DashboardCopy> = {
   },
   en: {
     authInitError:
-      "Failed to initialize authentication. Check Supabase URL/Publishable Key.",
-    authSignInError: "Google sign-in failed. Check your OAuth configuration.",
+      "We couldn't load your sign-in status. Please try again in a moment.",
+    authSignInError:
+      "Google sign-in failed. Please try again in a moment.",
     authSignOutError: "Sign-out failed. Please try again shortly.",
     checkingAuth: "Checking your sign-in status.",
     preLoginDescription:
