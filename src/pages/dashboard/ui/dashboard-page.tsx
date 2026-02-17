@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { calculateBurnoutRisk } from "@/entities/task/model/calculate-burnout-risk";
 import { evaluateDay } from "@/entities/task/model/evaluate-day";
 import type {
@@ -9,6 +9,30 @@ import type {
   TaskStatus
 } from "@/entities/task/model/types";
 import { CreateTaskForm } from "@/features/task/create-task";
+import {
+  BRAND_CATCHPHRASE,
+  clearLocalAuthBypassFlag,
+  clearStoredAiKey,
+  countCompletedToday,
+  disableStoredAiProFlag,
+  enableStoredAiProFlag,
+  getDashboardCopy,
+  readLocalAuthBypassFlag,
+  readStoredAiKey,
+  readStoredAiProFlag,
+  readStoredDaySessionState,
+  readStoredTasks,
+  saveLocalAuthBypassFlag,
+  saveStoredAiKey,
+  sectionFromPath,
+  writeStoredDaySessionState,
+  writeStoredTasks
+} from "@/pages/dashboard/model";
+import type {
+  AppSection,
+  AuthStatus,
+  DaySessionState
+} from "@/pages/dashboard/model";
 import { LandingPage } from "@/pages/landing";
 import { PricingPage } from "@/pages/pricing";
 import { SettingsPage } from "@/pages/settings";
@@ -24,48 +48,6 @@ import { AppHeader } from "@/widgets/header";
 import { InfoDeskHeader } from "@/widgets/info-desk";
 import { TaskBoard } from "@/widgets/task-board";
 
-const initialTasks: Task[] = [
-  {
-    id: "seed-1",
-    title: "Ship today's focused feature",
-    priority: "high",
-    status: "doing",
-    createdAt: "2026-02-17T09:00:00.000Z"
-  },
-  {
-    id: "seed-2",
-    title: "Write tests for risk score logic",
-    priority: "medium",
-    status: "todo",
-    createdAt: "2026-02-17T09:10:00.000Z"
-  },
-  {
-    id: "seed-3",
-    title: "Close one small maintenance task",
-    priority: "low",
-    status: "done",
-    createdAt: "2026-02-17T08:00:00.000Z",
-    completedAt: "2026-02-17T11:00:00.000Z"
-  }
-];
-
-function startOfTodayIso() {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  return now.toISOString();
-}
-
-type DaySessionState = "before-work" | "working" | "after-work";
-type AuthStatus = "checking" | "anonymous" | "authenticated" | "error";
-export type AppSection = "day" | "pricing" | "settings";
-
-const AI_KEY_STORAGE_KEY = "burnout-ai-key";
-const AI_PRO_STORAGE_KEY = "burnout-ai-pro";
-const DAY_SESSION_STORAGE_KEY = "burnout-day-session";
-const LOCAL_AUTH_BYPASS_KEY = "burnout-local-auth-bypass";
-const TASKS_STORAGE_KEY = "burnout-tasks";
-const BRAND_CATCHPHRASE =
-  "Keep one clear priority, cap in-progress work, and review completion momentum before overload builds up.";
 const authClientModulePromise = import("@/shared/api/auth-client");
 const supabaseClientModulePromise = import("@/shared/api/supabase-client");
 
@@ -76,133 +58,7 @@ async function loadAuthClient() {
 async function loadSupabaseClient() {
   return supabaseClientModulePromise;
 }
-
-function sectionFromPath(pathname: string): AppSection {
-  if (pathname === "/pricing" || pathname.startsWith("/app/pricing")) {
-    return "pricing";
-  }
-  if (pathname.startsWith("/app/settings")) {
-    return "settings";
-  }
-  return "day";
-}
-
-function dateKey(date = new Date()): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function isDaySessionState(value: unknown): value is DaySessionState {
-  return (
-    value === "before-work" || value === "working" || value === "after-work"
-  );
-}
-
-function isTaskPriority(value: unknown): value is TaskPriority {
-  return value === "low" || value === "medium" || value === "high";
-}
-
-function isTaskStatus(value: unknown): value is TaskStatus {
-  return value === "todo" || value === "doing" || value === "done";
-}
-
-function isTask(value: unknown): value is Task {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const record = value as Record<string, unknown>;
-  const hasValidCompletedAt =
-    record.completedAt === undefined || typeof record.completedAt === "string";
-
-  return (
-    typeof record.id === "string" &&
-    typeof record.title === "string" &&
-    isTaskPriority(record.priority) &&
-    isTaskStatus(record.status) &&
-    typeof record.createdAt === "string" &&
-    hasValidCompletedAt
-  );
-}
-
-function readStoredAiKey(): string {
-  try {
-    return window.localStorage.getItem(AI_KEY_STORAGE_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function readStoredAiProFlag(): boolean {
-  try {
-    return window.localStorage.getItem(AI_PRO_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function readStoredTasks(): Task[] {
-  try {
-    const raw = window.localStorage.getItem(TASKS_STORAGE_KEY);
-    if (!raw) {
-      return initialTasks;
-    }
-
-    const parsed = JSON.parse(raw) as { date?: unknown; tasks?: unknown };
-    if (parsed.date !== dateKey() || !Array.isArray(parsed.tasks)) {
-      return initialTasks;
-    }
-
-    if (!parsed.tasks.every((task) => isTask(task))) {
-      return initialTasks;
-    }
-
-    return parsed.tasks;
-  } catch {
-    return initialTasks;
-  }
-}
-
-function readStoredDaySessionState(): DaySessionState {
-  try {
-    const raw = window.localStorage.getItem(DAY_SESSION_STORAGE_KEY);
-    if (!raw) {
-      return "before-work";
-    }
-    const parsed = JSON.parse(raw) as { date?: unknown; state?: unknown };
-    if (
-      parsed.date === dateKey() &&
-      parsed.state &&
-      isDaySessionState(parsed.state)
-    ) {
-      return parsed.state;
-    }
-    return "before-work";
-  } catch {
-    return "before-work";
-  }
-}
-
-function writeStoredDaySessionState(state: DaySessionState) {
-  window.localStorage.setItem(
-    DAY_SESSION_STORAGE_KEY,
-    JSON.stringify({ date: dateKey(), state })
-  );
-}
-
-function writeStoredTasks(tasks: Task[]) {
-  window.localStorage.setItem(
-    TASKS_STORAGE_KEY,
-    JSON.stringify({ date: dateKey(), tasks })
-  );
-}
-
-function readLocalAuthBypassFlag(): boolean {
-  try {
-    return window.localStorage.getItem(LOCAL_AUTH_BYPASS_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
+export type { AppSection } from "@/pages/dashboard/model";
 
 export function DashboardPage() {
   const { locale } = useAppLocale();
@@ -227,85 +83,7 @@ export function DashboardPage() {
   const [dayEndReport, setDayEndReport] = useState<DayEvaluationReport | null>(
     null
   );
-  const copy =
-    locale === "ko"
-      ? {
-          authInitError:
-            "인증 초기화에 실패했습니다. Supabase URL/Publishable Key를 점검하세요.",
-          authSignInError:
-            "Google 로그인에 실패했습니다. OAuth 설정을 확인하세요.",
-          authSignOutError: "로그아웃에 실패했습니다. 잠시 후 다시 시도하세요.",
-          checkingAuth: "로그인 상태를 확인하는 중입니다.",
-          preLoginDescription:
-            "업무 시작 전 로그인하고, 퇴근 전 냉정한 리뷰를 남겨 번아웃을 예방하세요.",
-          sessionBeforeWork: "오늘 업무를 시작할 준비 단계입니다.",
-          sessionWorking:
-            "업무 진행 중입니다. Doing을 최소화해 집중을 유지하세요.",
-          sessionAfterWork:
-            "업무 마무리 상태입니다. 평가를 확인하고 다음 날을 준비하세요.",
-          stateBeforeWork: "하루 시작 전",
-          stateWorking: "근무 중",
-          stateAfterWork: "하루 마무리",
-          finishHint:
-            "퇴근 전 하루를 마감하면, 완료/미완료 비율과 위험도를 기준으로 내일 개선 계획을 제안합니다.",
-          finishDay: "하루 마무리하기",
-          resetHint:
-            "종료 평가는 새로고침으로 초기화되었습니다. 다시 시작해서 오늘 작업을 이어갈 수 있습니다.",
-          restart: "다시 시작하기",
-          settingsTitle: "개인 설정"
-        }
-      : locale === "ja"
-        ? {
-            authInitError:
-              "認証の初期化に失敗しました。Supabase URL/Publishable Key を確認してください。",
-            authSignInError:
-              "Googleログインに失敗しました。OAuth設定を確認してください。",
-            authSignOutError:
-              "ログアウトに失敗しました。しばらくしてから再試行してください。",
-            checkingAuth: "ログイン状態を確認しています。",
-            preLoginDescription:
-              "業務開始前にログインし、退勤前に客観レビューを残してバーンアウトを防ぎましょう。",
-            sessionBeforeWork: "今日の業務を開始する準備段階です。",
-            sessionWorking:
-              "業務中です。Doingを最小化して集中を維持してください。",
-            sessionAfterWork:
-              "業務終了状態です。評価を確認して翌日の準備をしてください。",
-            stateBeforeWork: "開始前",
-            stateWorking: "勤務中",
-            stateAfterWork: "終了後",
-            finishHint:
-              "退勤前に1日を締めると、完了/未完了比率とリスクに基づいて明日の改善計画を提案します。",
-            finishDay: "1日を締める",
-            resetHint:
-              "終了評価はリロードで初期化されました。再開して今日の作業を引き継げます。",
-            restart: "再開する",
-            settingsTitle: "個人設定"
-          }
-        : {
-            authInitError:
-              "Failed to initialize authentication. Check Supabase URL/Publishable Key.",
-            authSignInError:
-              "Google sign-in failed. Check your OAuth configuration.",
-            authSignOutError: "Sign-out failed. Please try again shortly.",
-            checkingAuth: "Checking your sign-in status.",
-            preLoginDescription:
-              "Sign in before work and leave an objective review before you leave to prevent burnout.",
-            sessionBeforeWork: "You're in pre-start mode for today.",
-            sessionWorking:
-              "You are in work mode. Keep Doing minimal to protect focus.",
-            sessionAfterWork:
-              "You are in wrap-up mode. Review today and prepare tomorrow.",
-            stateBeforeWork: "Before work",
-            stateWorking: "Working",
-            stateAfterWork: "After work",
-            finishHint:
-              "When you close the day before leaving, the app proposes tomorrow's improvements using completion ratio and risk.",
-            finishDay: "Finish day",
-            resetHint:
-              "End-of-day review was reset after refresh. You can restart and continue today's work.",
-            restart: "Start again",
-            settingsTitle: "Settings"
-          };
+  const copy = useMemo(() => getDashboardCopy(locale), [locale]);
   const canUseLocalBypass = import.meta.env.VITE_APP_ENV !== "production";
 
   const aiAccessMode: AiAccessMode = hasProAccess
@@ -314,11 +92,7 @@ export function DashboardPage() {
       ? "byok"
       : "none";
 
-  const todayIso = startOfTodayIso();
-  const completedTodayCount = tasks.filter(
-    (task) =>
-      task.status === "done" && task.completedAt && task.completedAt >= todayIso
-  ).length;
+  const completedTodayCount = useMemo(() => countCompletedToday(tasks), [tasks]);
 
   const burnoutReport = useMemo(
     () => calculateBurnoutRisk({ tasks, completedTodayCount, locale }),
@@ -412,24 +186,34 @@ export function DashboardPage() {
     setDaySessionState("before-work");
   };
 
+  const openPricingSection = useCallback(() => {
+    setActiveSection("pricing");
+    navigate("/app/pricing");
+  }, []);
+
+  const openSettingsSection = useCallback(() => {
+    setActiveSection("settings");
+    navigate("/app/settings");
+  }, []);
+
   const onSaveAiKey = (nextAiKey: string) => {
     setStoredAiKey(nextAiKey);
-    window.localStorage.setItem(AI_KEY_STORAGE_KEY, nextAiKey);
+    saveStoredAiKey(nextAiKey);
   };
 
   const onClearAiKey = () => {
     setStoredAiKey("");
-    window.localStorage.removeItem(AI_KEY_STORAGE_KEY);
+    clearStoredAiKey();
   };
 
   const onActivateProAccess = () => {
     setHasProAccess(true);
-    window.localStorage.setItem(AI_PRO_STORAGE_KEY, "true");
+    enableStoredAiProFlag();
   };
 
   const onDeactivateProAccess = () => {
     setHasProAccess(false);
-    window.localStorage.removeItem(AI_PRO_STORAGE_KEY);
+    disableStoredAiProFlag();
   };
 
   useEffect(() => {
@@ -529,7 +313,7 @@ export function DashboardPage() {
   };
 
   const onContinueWithLocalBypass = () => {
-    window.localStorage.setItem(LOCAL_AUTH_BYPASS_KEY, "true");
+    saveLocalAuthBypassFlag();
     setIsLocalAuthBypass(true);
     setAuthStatus("authenticated");
     setAuthUserEmail("local-test@burnout.dev");
@@ -538,7 +322,7 @@ export function DashboardPage() {
 
   const onSignOutGoogle = async () => {
     if (isLocalAuthBypass) {
-      window.localStorage.removeItem(LOCAL_AUTH_BYPASS_KEY);
+      clearLocalAuthBypassFlag();
       setIsLocalAuthBypass(false);
       setAuthStatus("anonymous");
       setAuthUserEmail("");
@@ -569,14 +353,8 @@ export function DashboardPage() {
           userEmail=""
           hasProAccess={hasProAccess}
           isAuthBusy={isAuthBusy}
-          onOpenPricing={() => {
-            setActiveSection("pricing");
-            navigate("/app/pricing");
-          }}
-          onOpenSettings={() => {
-            setActiveSection("settings");
-            navigate("/app/settings");
-          }}
+          onOpenPricing={openPricingSection}
+          onOpenSettings={openSettingsSection}
           onSignOut={onSignOutGoogle}
           onSignIn={onSignInWithGoogle}
         />
@@ -624,14 +402,8 @@ export function DashboardPage() {
         userEmail={authUserEmail}
         hasProAccess={hasProAccess}
         isAuthBusy={isAuthBusy}
-        onOpenPricing={() => {
-          setActiveSection("pricing");
-          navigate("/app/pricing");
-        }}
-        onOpenSettings={() => {
-          setActiveSection("settings");
-          navigate("/app/settings");
-        }}
+        onOpenPricing={openPricingSection}
+        onOpenSettings={openSettingsSection}
         onSignOut={onSignOutGoogle}
         onSignIn={onSignInWithGoogle}
       />
@@ -737,10 +509,7 @@ export function DashboardPage() {
         <PricingPage
           hasSavedApiKey={Boolean(storedAiKey)}
           hasProAccess={hasProAccess}
-          onOpenSettings={() => {
-            setActiveSection("settings");
-            navigate("/app/settings");
-          }}
+          onOpenSettings={openSettingsSection}
           onActivateProAccess={onActivateProAccess}
           onDeactivateProAccess={onDeactivateProAccess}
         />
