@@ -1,6 +1,8 @@
+import { useState } from "react";
 import type { Task, TaskStatus } from "@/entities/task/model/types";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils/cn";
+import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 
 interface TaskItemProps {
@@ -50,6 +52,8 @@ export function TaskItem({
   onDragStart,
   onDragEnd
 }: TaskItemProps) {
+  const [isStatusPickerOpen, setIsStatusPickerOpen] = useState(false);
+
   return (
     <Card
       draggable={draggable}
@@ -77,23 +81,39 @@ export function TaskItem({
           <Badge className={cn("normal-case", statusTone(task.status))}>
             {statusLabel(task.status)}
           </Badge>
-          <label className="sr-only" htmlFor={`task-status-${task.id}`}>
-            상태 변경
-          </label>
-          <select
-            id={`task-status-${task.id}`}
-            value={task.status}
-            onChange={(event) =>
-              onStatusChange?.(task.id, event.target.value as TaskStatus)
-            }
-            className="ml-auto h-8 rounded-md border border-slate-300 bg-white px-2 text-xs font-medium text-ink focus:outline-none focus:ring-2 focus:ring-sky-200"
-            aria-label={`${task.title} 상태 변경`}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setIsStatusPickerOpen((current) => !current)}
+            className="ml-auto"
+            aria-label={`${task.title} 상태 선택 열기`}
           >
-            <option value="todo">To Do</option>
-            <option value="doing">Doing</option>
-            <option value="done">Done</option>
-          </select>
+            상태 변경
+          </Button>
         </div>
+
+        {isStatusPickerOpen && (
+          <div className="border-t border-slate-200 pt-2">
+            <label className="sr-only" htmlFor={`task-status-${task.id}`}>
+              상태 변경
+            </label>
+            <select
+              id={`task-status-${task.id}`}
+              value={task.status}
+              onChange={(event) => {
+                onStatusChange?.(task.id, event.target.value as TaskStatus);
+                setIsStatusPickerOpen(false);
+              }}
+              className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-sky-200"
+              aria-label={`${task.title} 상태 변경`}
+            >
+              <option value="todo">To Do</option>
+              <option value="doing">Doing</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

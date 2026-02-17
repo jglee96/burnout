@@ -30,6 +30,22 @@ function pickFirst30MinuteAction(report: DayEvaluationReport) {
   return "내일 시작 30분 블록에는 오늘 미완료 작업 중 가장 작은 항목 1개만 완료하세요.";
 }
 
+function pickWarningLine(report: DayEvaluationReport) {
+  const aiWarning = report.aiSuggestion?.riskDrivers.find(
+    (item) => item.trim().length > 0
+  );
+  if (aiWarning) {
+    return aiWarning;
+  }
+
+  const observation = report.observations.find((item) => item.trim().length > 0);
+  if (observation) {
+    return observation;
+  }
+
+  return "미완료 작업 수가 과도해지지 않도록 내일 시작 시 우선순위를 재정렬하세요.";
+}
+
 export function DayEndReport({
   report,
   aiAccessMode,
@@ -37,6 +53,7 @@ export function DayEndReport({
   onPrepareNextDay
 }: DayEndReportProps) {
   const first30MinuteAction = pickFirst30MinuteAction(report);
+  const warningLine = pickWarningLine(report);
 
   return (
     <Card>
@@ -44,6 +61,22 @@ export function DayEndReport({
         <CardTitle>하루 종료 평가</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <h3 className="text-sm font-semibold text-ink">오늘 핵심 3줄 요약</h3>
+          <ul className="mt-2 space-y-2 text-sm text-calm">
+            <li>
+              <span className="font-medium text-ink">총평:</span> {report.summary}
+            </li>
+            <li>
+              <span className="font-medium text-ink">내일 첫 30분:</span>{" "}
+              {first30MinuteAction}
+            </li>
+            <li>
+              <span className="font-medium text-ink">주의:</span> {warningLine}
+            </li>
+          </ul>
+        </section>
+
         <section className="rounded-xl border border-sky-200 bg-sky-50/70 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
             내일 첫 30분 단일 액션

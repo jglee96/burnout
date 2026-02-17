@@ -42,8 +42,20 @@ describe("DayEndReport", () => {
 
     const firstActionHeading = screen.getByText("내일 첫 30분 단일 액션");
     const firstActionSection = firstActionHeading.closest("section");
+    const keySummaryHeading = screen.getByText("오늘 핵심 3줄 요약");
+    const keySummarySection = keySummaryHeading.closest("section");
 
     expect(firstActionSection).not.toBeNull();
+    expect(keySummarySection).not.toBeNull();
+    expect(
+      within(keySummarySection as HTMLElement).getByText(/총평:/)
+    ).toBeInTheDocument();
+    expect(
+      within(keySummarySection as HTMLElement).getByText(/내일 첫 30분:/)
+    ).toBeInTheDocument();
+    expect(
+      within(keySummarySection as HTMLElement).getByText(/주의:/)
+    ).toBeInTheDocument();
     expect(
       within(firstActionSection as HTMLElement).getByText(
         "오전 9:00-9:30에는 우선순위 1개만 처리하세요."
