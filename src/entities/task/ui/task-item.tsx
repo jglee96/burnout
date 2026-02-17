@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/shared/ui/card";
 
 interface TaskItemProps {
   task: Task;
+  onStatusChange?: (taskId: string, status: TaskStatus) => void;
   draggable?: boolean;
   isDragging?: boolean;
   onDragStart?: (taskId: string) => void;
@@ -43,6 +44,7 @@ function statusTone(status: TaskStatus) {
 
 export function TaskItem({
   task,
+  onStatusChange,
   draggable = false,
   isDragging = false,
   onDragStart,
@@ -75,6 +77,22 @@ export function TaskItem({
           <Badge className={cn("normal-case", statusTone(task.status))}>
             {statusLabel(task.status)}
           </Badge>
+          <label className="sr-only" htmlFor={`task-status-${task.id}`}>
+            상태 변경
+          </label>
+          <select
+            id={`task-status-${task.id}`}
+            value={task.status}
+            onChange={(event) =>
+              onStatusChange?.(task.id, event.target.value as TaskStatus)
+            }
+            className="ml-auto h-8 rounded-md border border-slate-300 bg-white px-2 text-xs font-medium text-ink focus:outline-none focus:ring-2 focus:ring-sky-200"
+            aria-label={`${task.title} 상태 변경`}
+          >
+            <option value="todo">To Do</option>
+            <option value="doing">Doing</option>
+            <option value="done">Done</option>
+          </select>
         </div>
       </CardContent>
     </Card>

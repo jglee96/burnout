@@ -12,18 +12,45 @@ interface DayEndReportProps {
   onPrepareNextDay: () => void;
 }
 
+function pickFirst30MinuteAction(report: DayEvaluationReport) {
+  const aiFirstAction = report.aiSuggestion?.tomorrowFocusPlan.find(
+    (item) => item.trim().length > 0
+  );
+  if (aiFirstAction) {
+    return aiFirstAction;
+  }
+
+  const defaultFirstAction = report.tomorrowActions.find(
+    (item) => item.trim().length > 0
+  );
+  if (defaultFirstAction) {
+    return defaultFirstAction;
+  }
+
+  return "내일 시작 30분 블록에는 오늘 미완료 작업 중 가장 작은 항목 1개만 완료하세요.";
+}
+
 export function DayEndReport({
   report,
   aiAccessMode,
   isAiEvaluating,
   onPrepareNextDay
 }: DayEndReportProps) {
+  const first30MinuteAction = pickFirst30MinuteAction(report);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>하루 종료 평가</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        <section className="rounded-xl border border-sky-200 bg-sky-50/70 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
+            내일 첫 30분 단일 액션
+          </p>
+          <p className="mt-2 text-sm font-medium text-ink">{first30MinuteAction}</p>
+        </section>
+
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-ink">냉정한 평가</h3>
           <p className="text-sm text-calm">{report.summary}</p>

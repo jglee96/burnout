@@ -23,15 +23,31 @@ const tasks: Task[] = [
 ];
 
 describe("TaskBoard drag and drop", () => {
+  test("shows and dismisses the drag guide banner", () => {
+    window.localStorage.removeItem("burnout-dnd-guide-dismissed-v1");
+    render(<TaskBoard tasks={tasks} onStatusChange={vi.fn()} />);
+
+    expect(screen.getByText("카드 이동 가이드")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "드래그 가이드 닫기" }));
+    expect(screen.queryByText("카드 이동 가이드")).not.toBeInTheDocument();
+    expect(
+      window.localStorage.getItem("burnout-dnd-guide-dismissed-v1")
+    ).toBe("true");
+  });
+
   test("changes task status when dropped to another column", () => {
+    window.localStorage.setItem("burnout-dnd-guide-dismissed-v1", "true");
     const onStatusChange = vi.fn();
     render(<TaskBoard tasks={tasks} onStatusChange={onStatusChange} />);
 
-    const draggableTask = screen.getByText("Prepare release notes");
+    const draggableTask = screen
+      .getByText("Prepare release notes")
+      .closest("[draggable='true']");
+    expect(draggableTask).not.toBeNull();
     const doingColumn = screen.getByTestId("task-column-doing");
     const dataTransfer = createDataTransfer();
 
-    fireEvent.dragStart(draggableTask, { dataTransfer });
+    fireEvent.dragStart(draggableTask as Element, { dataTransfer });
     fireEvent.dragOver(doingColumn, { dataTransfer });
     fireEvent.drop(doingColumn, { dataTransfer });
 
