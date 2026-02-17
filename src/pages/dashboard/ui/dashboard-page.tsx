@@ -652,6 +652,7 @@ export function DashboardPage() {
 
       {activeSection === "pricing" && (
         <PricingPage
+          hasSavedApiKey={Boolean(storedAiKey)}
           hasProAccess={hasProAccess}
           onActivateProAccess={onActivateProAccess}
           onDeactivateProAccess={onDeactivateProAccess}
@@ -671,6 +672,7 @@ export function DashboardPage() {
           <SettingsPage
             userEmail={authUserEmail}
             hasSavedApiKey={Boolean(storedAiKey)}
+            hasProAccess={hasProAccess}
             onSaveApiKey={onSaveAiKey}
             onClearApiKey={onClearAiKey}
           />

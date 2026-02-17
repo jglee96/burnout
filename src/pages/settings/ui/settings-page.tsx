@@ -3,10 +3,12 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
+import { AiAccessSummary } from "@/widgets/ai-access";
 
 interface SettingsPageProps {
   userEmail: string;
   hasSavedApiKey: boolean;
+  hasProAccess: boolean;
   onSaveApiKey: (apiKey: string) => void;
   onClearApiKey: () => void;
 }
@@ -14,6 +16,7 @@ interface SettingsPageProps {
 export function SettingsPage({
   userEmail,
   hasSavedApiKey,
+  hasProAccess,
   onSaveApiKey,
   onClearApiKey
 }: SettingsPageProps) {
@@ -36,6 +39,11 @@ export function SettingsPage({
           이어지는지 확인할 수 있습니다.
         </CardContent>
       </Card>
+
+      <AiAccessSummary
+        hasSavedApiKey={hasSavedApiKey}
+        hasProAccess={hasProAccess}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="border-slate-200/90 bg-white/90">

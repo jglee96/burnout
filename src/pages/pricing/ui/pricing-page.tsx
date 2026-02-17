@@ -1,14 +1,17 @@
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { AiAccessSummary } from "@/widgets/ai-access";
 
 interface PricingPageProps {
+  hasSavedApiKey: boolean;
   hasProAccess: boolean;
   onActivateProAccess: () => void;
   onDeactivateProAccess: () => void;
 }
 
 export function PricingPage({
+  hasSavedApiKey,
   hasProAccess,
   onActivateProAccess,
   onDeactivateProAccess
@@ -58,6 +61,11 @@ export function PricingPage({
           있습니다.
         </p>
       </div>
+
+      <AiAccessSummary
+        hasSavedApiKey={hasSavedApiKey}
+        hasProAccess={hasProAccess}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="border-slate-200/90 bg-white/90">
