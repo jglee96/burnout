@@ -29,6 +29,7 @@
    - Framework preset: `Vite`
    - Build command: `pnpm build`
    - Build output: `dist`
+   - Deploy command: 비워둔다. (`npx wrangler deploy` 사용 금지)
 3. Pages 환경 변수 등록:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
@@ -52,6 +53,15 @@
    - 로그인 사용자 검증
    - `ai_entitlements` 조회 후 접근 제어
    - BYOK 모드면 `ai_credentials` 복호화 키 사용
+
+### Worker 자동 배포 (권장)
+
+1. 저장소에 있는 GitHub Actions 워크플로우를 사용한다:
+   - `.github/workflows/deploy-worker.yml`
+2. GitHub Repository Secrets를 등록한다:
+   - `CLOUDFLARE_API_TOKEN`
+   - `CLOUDFLARE_ACCOUNT_ID`
+3. `main` 브랜치에 `workers/api/**` 변경이 push되면 Worker가 자동 배포된다.
 
 ## 5) 사용자별 AI 접근 정책 연결
 
@@ -86,9 +96,11 @@
 1. Supabase 프로젝트 생성 + migration 실행
 2. Google OAuth Client 생성 후 Supabase Provider에 연결
 3. Cloudflare Pages에 현재 저장소 연결 및 환경변수 주입
-4. Worker 비밀키 설정
-5. 결제사 웹훅 URL 등록 (`/api/billing/webhook`)
-6. 배포 도메인을 Supabase/Google Redirect URL에 모두 반영
+4. Pages Deploy command가 비어있는지 확인
+5. Worker 비밀키 설정
+6. GitHub Secrets(`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`) 설정
+7. 결제사 웹훅 URL 등록 (`/api/billing/webhook`)
+8. 배포 도메인을 Supabase/Google Redirect URL에 모두 반영
 
 ## 9) Key 용어 정리 (중요)
 
