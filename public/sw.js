@@ -1,11 +1,14 @@
-const CACHE_NAME = "burnout-guard-v1";
+const CACHE_NAME = "burnout-guard-v2";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
+  "/icons/icon-144.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
-  "/icons/maskable-512.png"
+  "/icons/maskable-512.png",
+  "/screenshots/desktop-wide.png",
+  "/screenshots/mobile.png"
 ];
 
 self.addEventListener("install", (event) => {
