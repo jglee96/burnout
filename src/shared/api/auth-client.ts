@@ -1,10 +1,10 @@
 import { supabase } from "@/shared/api/supabase-client";
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(redirectPath = "/app/day") {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: window.location.origin
+      redirectTo: `${window.location.origin}${redirectPath}`
     }
   });
 

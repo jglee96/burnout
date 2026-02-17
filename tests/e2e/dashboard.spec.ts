@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("dashboard renders and accepts a new task", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/app/day");
 
   await expect(
     page.getByRole("heading", { name: "Burnout Guard" })

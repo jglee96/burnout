@@ -10,6 +10,7 @@ import type {
   TaskStatus
 } from "@/entities/task/model/types";
 import { getAiDetailedSuggestion } from "@/shared/api/ai-evaluation-client";
+import { navigate } from "@/shared/lib/router/navigation";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { DayEndReport } from "@/widgets/day-session/ui/day-end-report";
@@ -62,6 +63,26 @@ const AI_PRO_STORAGE_KEY = "burnout-ai-pro";
 const DAY_SESSION_STORAGE_KEY = "burnout-day-session";
 const LOCAL_AUTH_BYPASS_KEY = "burnout-local-auth-bypass";
 const TASKS_STORAGE_KEY = "burnout-tasks";
+
+function sectionFromPath(pathname: string): AppSection {
+  if (pathname.startsWith("/app/pricing")) {
+    return "pricing";
+  }
+  if (pathname.startsWith("/app/settings")) {
+    return "settings";
+  }
+  return "day";
+}
+
+function pathFromSection(section: AppSection): string {
+  if (section === "pricing") {
+    return "/app/pricing";
+  }
+  if (section === "settings") {
+    return "/app/settings";
+  }
+  return "/app/day";
+}
 
 function dateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10);
@@ -184,7 +205,9 @@ export function DashboardPage() {
   const [daySessionState, setDaySessionState] = useState<DaySessionState>(
     readStoredDaySessionState
   );
-  const [activeSection, setActiveSection] = useState<AppSection>("day");
+  const [activeSection, setActiveSection] = useState<AppSection>(() =>
+    sectionFromPath(window.location.pathname)
+  );
   const [tasks, setTasks] = useState<Task[]>(readStoredTasks);
   const [storedAiKey, setStoredAiKey] = useState<string>(readStoredAiKey);
   const [hasProAccess, setHasProAccess] =
@@ -327,6 +350,13 @@ export function DashboardPage() {
   useEffect(() => {
     writeStoredDaySessionState(daySessionState);
   }, [daySessionState]);
+
+  useEffect(() => {
+    const onPathChange = () =>
+      setActiveSection(sectionFromPath(window.location.pathname));
+    window.addEventListener("popstate", onPathChange);
+    return () => window.removeEventListener("popstate", onPathChange);
+  }, []);
 
   useEffect(() => {
     writeStoredTasks(tasks);
@@ -510,7 +540,10 @@ export function DashboardPage() {
         activeSection={activeSection}
         userEmail={authUserEmail}
         hasProAccess={hasProAccess}
-        onChangeSection={setActiveSection}
+        onChangeSection={(section) => {
+          setActiveSection(section);
+          navigate(pathFromSection(section));
+        }}
         onSignOut={onSignOutGoogle}
         isSignOutBusy={isAuthBusy}
       />
