@@ -1,32 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, CircleUserRound } from "lucide-react";
-import type { AppSection } from "@/pages/dashboard/ui/dashboard-page";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 
 interface AppHeaderProps {
-  activeSection: AppSection;
   isAuthenticated: boolean;
   userEmail: string;
   hasProAccess: boolean;
   isAuthBusy: boolean;
-  onOpenDay: () => void;
-  onOpenPricing: () => void;
   onOpenSettings: () => void;
+  onOpenPricing: () => void;
   onSignOut: () => void;
   onSignIn: () => void;
 }
 
 export function AppHeader({
-  activeSection,
   isAuthenticated,
   userEmail,
   hasProAccess,
   isAuthBusy,
-  onOpenDay,
-  onOpenPricing,
   onOpenSettings,
+  onOpenPricing,
   onSignOut,
   onSignIn
 }: AppHeaderProps) {
@@ -51,14 +46,9 @@ export function AppHeader({
     <Card className="sticky top-0 z-30 border-slate-200/90 bg-white/85 backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="rounded-lg bg-ink px-2 py-1 text-xs font-semibold text-white"
-            onClick={onOpenDay}
-            aria-label="하루 관리 열기"
-          >
+          <div className="rounded-lg bg-ink px-2 py-1 text-xs font-semibold text-white">
             BG
-          </button>
+          </div>
           <p className="font-['Avenir_Next','Segoe_UI',sans-serif] text-sm font-semibold tracking-wide">
             Burnout Guard
           </p>
@@ -70,23 +60,6 @@ export function AppHeader({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={activeSection === "day" ? "default" : "outline"}
-            onClick={onOpenDay}
-          >
-            하루 관리
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={activeSection === "pricing" ? "default" : "outline"}
-            onClick={onOpenPricing}
-          >
-            요금제
-          </Button>
-
           {!isAuthenticated ? (
             <Button
               type="button"

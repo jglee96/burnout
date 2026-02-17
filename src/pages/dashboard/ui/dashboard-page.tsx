@@ -473,15 +473,10 @@ export function DashboardPage() {
     return (
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-3 sm:px-6">
         <AppHeader
-          activeSection={activeSection}
           isAuthenticated={false}
           userEmail=""
           hasProAccess={hasProAccess}
           isAuthBusy={isAuthBusy}
-          onOpenDay={() => {
-            setActiveSection("day");
-            navigate("/app/day");
-          }}
           onOpenPricing={() => {
             setActiveSection("pricing");
             navigate("/app/pricing");
@@ -534,15 +529,10 @@ export function DashboardPage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-3 sm:px-6">
       <AppHeader
-        activeSection={activeSection}
         isAuthenticated={authStatus === "authenticated"}
         userEmail={authUserEmail}
         hasProAccess={hasProAccess}
         isAuthBusy={isAuthBusy}
-        onOpenDay={() => {
-          setActiveSection("day");
-          navigate("/app/day");
-        }}
         onOpenPricing={() => {
           setActiveSection("pricing");
           navigate("/app/pricing");
