@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
-import { signInWithGoogle } from "@/shared/api/auth-client";
 import { navigate } from "@/shared/lib/router/navigation";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -30,6 +29,11 @@ const workflow = [
   "퇴근 전 냉정한 평가 실행",
   "내일 개선안으로 다음 날 시작"
 ];
+const authClientModulePromise = import("@/shared/api/auth-client");
+
+async function loadAuthClient() {
+  return authClientModulePromise;
+}
 
 export function ProductPage() {
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -39,6 +43,7 @@ export function ProductPage() {
     setIsSigningIn(true);
     setErrorMessage("");
     try {
+      const { signInWithGoogle } = await loadAuthClient();
       await signInWithGoogle("/app/day");
     } catch {
       setErrorMessage("로그인에 실패했습니다. Google OAuth 설정을 확인하세요.");

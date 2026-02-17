@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { CreateTaskForm } from "@/features/task/create-task/ui/create-task-form";
 import { calculateBurnoutRisk } from "@/entities/task/model/calculate-burnout-risk";
 import { evaluateDay } from "@/entities/task/model/evaluate-day";
 import type {
@@ -9,20 +8,20 @@ import type {
   TaskPriority,
   TaskStatus
 } from "@/entities/task/model/types";
+import { CreateTaskForm } from "@/features/task/create-task";
+import { LandingPage } from "@/pages/landing";
+import { PricingPage } from "@/pages/pricing";
+import { SettingsPage } from "@/pages/settings";
 import { getAiDetailedSuggestion } from "@/shared/api/ai-evaluation-client";
 import { navigate } from "@/shared/lib/router/navigation";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
-import { DayEndReport } from "@/widgets/day-session/ui/day-end-report";
-import { DayStartPanel } from "@/widgets/day-session/ui/day-start-panel";
-import { BurnoutSummary } from "@/widgets/burnout-summary/ui/burnout-summary";
-import { AppHeader } from "@/widgets/header/ui/app-header";
-import { InfoDeskHeader } from "@/widgets/info-desk/ui/info-desk-header";
-import { LandingPage } from "@/pages/landing/ui/landing-page";
-import { PricingPage } from "@/pages/pricing/ui/pricing-page";
-import { SettingsPage } from "@/pages/settings/ui/settings-page";
-import { TaskBoard } from "@/widgets/task-board/ui/task-board";
+import { BurnoutSummary } from "@/widgets/burnout-summary";
+import { DayEndReport, DayStartPanel } from "@/widgets/day-session";
+import { AppHeader } from "@/widgets/header";
+import { InfoDeskHeader } from "@/widgets/info-desk";
+import { TaskBoard } from "@/widgets/task-board";
 
 const initialTasks: Task[] = [
   {
@@ -64,9 +63,19 @@ const AI_PRO_STORAGE_KEY = "burnout-ai-pro";
 const DAY_SESSION_STORAGE_KEY = "burnout-day-session";
 const LOCAL_AUTH_BYPASS_KEY = "burnout-local-auth-bypass";
 const TASKS_STORAGE_KEY = "burnout-tasks";
+const authClientModulePromise = import("@/shared/api/auth-client");
+const supabaseClientModulePromise = import("@/shared/api/supabase-client");
+
+async function loadAuthClient() {
+  return authClientModulePromise;
+}
+
+async function loadSupabaseClient() {
+  return supabaseClientModulePromise;
+}
 
 function sectionFromPath(pathname: string): AppSection {
-  if (pathname.startsWith("/app/pricing")) {
+  if (pathname === "/pricing" || pathname.startsWith("/app/pricing")) {
     return "pricing";
   }
   if (pathname.startsWith("/app/settings")) {
@@ -366,8 +375,8 @@ export function DashboardPage() {
 
       try {
         const [{ getCurrentSession }, { supabase }] = await Promise.all([
-          import("@/shared/api/auth-client"),
-          import("@/shared/api/supabase-client")
+          loadAuthClient(),
+          loadSupabaseClient()
         ]);
 
         const session = await getCurrentSession();
@@ -426,7 +435,7 @@ export function DashboardPage() {
     setIsAuthBusy(true);
     setAuthMessage("");
     try {
-      const { signInWithGoogle } = await import("@/shared/api/auth-client");
+      const { signInWithGoogle } = await loadAuthClient();
       await signInWithGoogle();
     } catch {
       setAuthStatus("error");
@@ -457,7 +466,7 @@ export function DashboardPage() {
     setIsAuthBusy(true);
     setAuthMessage("");
     try {
-      const { signOut } = await import("@/shared/api/auth-client");
+      const { signOut } = await loadAuthClient();
       await signOut();
       setAuthStatus("anonymous");
       setAuthUserEmail("");

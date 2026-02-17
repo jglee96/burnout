@@ -1,5 +1,5 @@
 import type { Task, TaskStatus } from "@/entities/task/model/types";
-import { TaskItem } from "@/entities/task/ui/task-item";
+import { TaskItem } from "@/entities/task";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
 type TaskBoardState = "ready" | "loading" | "error" | "offline";
