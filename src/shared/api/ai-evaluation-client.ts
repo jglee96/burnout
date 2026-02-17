@@ -7,6 +7,7 @@ import type {
   Task
 } from "@/entities/task/model/types";
 import { requestJson } from "@/shared/api/client";
+import { getClientEnv } from "@/shared/lib/env/client-env";
 
 interface AiEvaluationRequest {
   accessMode: Exclude<AiAccessMode, "none">;
@@ -40,12 +41,16 @@ export async function getAiDetailedSuggestion({
   burnoutRiskReport,
   dayEvaluationReport
 }: AiEvaluationRequest): Promise<AIDetailedSuggestion> {
+  const { apiBaseUrl } = getClientEnv();
+  const endpoint = apiBaseUrl
+    ? new URL("/api/ai/evaluate-day", apiBaseUrl).toString()
+    : "/api/ai/evaluate-day";
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), 3500);
 
   try {
     return await requestJson<AIDetailedSuggestion>(
-      "/api/ai/evaluate-day",
+      endpoint,
       {
         method: "POST",
         signal: controller.signal,

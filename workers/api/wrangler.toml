@@ -1,0 +1,8 @@
+name = "burnout-api"
+main = "src/index.ts"
+compatibility_date = "2026-02-17"
+workers_dev = true
+
+[vars]
+APP_ENV = "production"
+

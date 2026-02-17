@@ -3,7 +3,10 @@ interface RequestOptions extends RequestInit {
 }
 
 function createUrl(path: string, query?: RequestOptions["query"]) {
-  const url = new URL(path, "https://example.local");
+  const isAbsolute = /^https?:\/\//.test(path);
+  const url = isAbsolute
+    ? new URL(path)
+    : new URL(path, window.location.origin);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined) {
@@ -11,7 +14,7 @@ function createUrl(path: string, query?: RequestOptions["query"]) {
       }
     }
   }
-  return url.pathname + url.search;
+  return isAbsolute ? url.toString() : url.pathname + url.search;
 }
 
 export async function requestJson<T>(
