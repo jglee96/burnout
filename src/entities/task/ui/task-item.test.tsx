@@ -11,27 +11,20 @@ const baseTask: Task = {
 };
 
 describe("TaskItem", () => {
-  test("renders status badge, no status buttons, and supports dropdown fallback", () => {
+  test("renders selected status in dropdown and supports status changes", () => {
     const onStatusChange = vi.fn();
     render(<TaskItem task={baseTask} onStatusChange={onStatusChange} />);
 
     expect(screen.getByText("Prepare weekly summary")).toBeInTheDocument();
     expect(screen.getByText("medium")).toBeInTheDocument();
-    expect(screen.getByText("Doing")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "To Do" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Doing" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Done" })).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Prepare weekly summary 상태 선택 열기" })
-    ).toBeInTheDocument();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Prepare weekly summary 상태 선택 열기" })
-    );
 
     const statusSelect = screen.getByRole("combobox", {
       name: "Prepare weekly summary 상태 변경"
     });
+    expect(statusSelect).toHaveValue("doing");
     fireEvent.change(statusSelect, { target: { value: "done" } });
 
     expect(onStatusChange).toHaveBeenCalledWith("task-1", "done");
