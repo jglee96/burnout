@@ -12,6 +12,7 @@ export interface Task {
 }
 
 export type BurnoutRiskLevel = "low" | "moderate" | "high";
+export type AiAccessMode = "none" | "byok" | "pro";
 
 export interface BurnoutRiskReport {
   level: BurnoutRiskLevel;
@@ -23,6 +24,7 @@ export interface DayEvaluationReport {
   summary: string;
   observations: string[];
   tomorrowActions: string[];
+  aiSuggestion?: AIDetailedSuggestion;
   metrics: {
     totalCount: number;
     doneCount: number;
@@ -32,4 +34,13 @@ export interface DayEvaluationReport {
     burnoutRiskLevel: BurnoutRiskLevel;
     burnoutRiskScore: number;
   };
+}
+
+export interface AIDetailedSuggestion {
+  accessMode: Exclude<AiAccessMode, "none">;
+  diagnosis: string;
+  riskDrivers: string[];
+  tomorrowFocusPlan: string[];
+  scheduleTemplate: string[];
+  stopRules: string[];
 }

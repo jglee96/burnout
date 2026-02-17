@@ -1,0 +1,74 @@
+import { buildAiDetailedSuggestion } from "@/entities/task/model/build-ai-detailed-suggestion";
+import type {
+  AIDetailedSuggestion,
+  AiAccessMode,
+  BurnoutRiskReport,
+  DayEvaluationReport,
+  Task
+} from "@/entities/task/model/types";
+import { requestJson } from "@/shared/api/client";
+
+interface AiEvaluationRequest {
+  accessMode: Exclude<AiAccessMode, "none">;
+  apiKey?: string;
+  tasks: Task[];
+  completedTodayCount: number;
+  burnoutRiskReport: BurnoutRiskReport;
+  dayEvaluationReport: DayEvaluationReport;
+}
+
+function isAiDetailedSuggestion(data: unknown): data is AIDetailedSuggestion {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  const record = data as Record<string, unknown>;
+  return (
+    (record.accessMode === "byok" || record.accessMode === "pro") &&
+    typeof record.diagnosis === "string" &&
+    Array.isArray(record.riskDrivers) &&
+    Array.isArray(record.tomorrowFocusPlan) &&
+    Array.isArray(record.scheduleTemplate) &&
+    Array.isArray(record.stopRules)
+  );
+}
+
+export async function getAiDetailedSuggestion({
+  accessMode,
+  apiKey,
+  tasks,
+  completedTodayCount,
+  burnoutRiskReport,
+  dayEvaluationReport
+}: AiEvaluationRequest): Promise<AIDetailedSuggestion> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 3500);
+
+  try {
+    return await requestJson<AIDetailedSuggestion>(
+      "/api/ai/evaluate-day",
+      {
+        method: "POST",
+        signal: controller.signal,
+        body: JSON.stringify({
+          accessMode,
+          apiKey,
+          tasks,
+          completedTodayCount,
+          burnoutRiskReport,
+          dayEvaluationReport
+        })
+      },
+      isAiDetailedSuggestion
+    );
+  } catch {
+    return buildAiDetailedSuggestion({
+      accessMode,
+      tasks,
+      completedTodayCount,
+      burnoutRiskReport,
+      dayEvaluationReport
+    });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}

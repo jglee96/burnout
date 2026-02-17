@@ -1,13 +1,23 @@
-import type { DayEvaluationReport } from "@/entities/task/model/types";
+import type {
+  AiAccessMode,
+  DayEvaluationReport
+} from "@/entities/task/model/types";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
 interface DayEndReportProps {
   report: DayEvaluationReport;
+  aiAccessMode: AiAccessMode;
+  isAiEvaluating: boolean;
   onPrepareNextDay: () => void;
 }
 
-export function DayEndReport({ report, onPrepareNextDay }: DayEndReportProps) {
+export function DayEndReport({
+  report,
+  aiAccessMode,
+  isAiEvaluating,
+  onPrepareNextDay
+}: DayEndReportProps) {
   return (
     <Card>
       <CardHeader>
@@ -42,6 +52,82 @@ export function DayEndReport({ report, onPrepareNextDay }: DayEndReportProps) {
           <p>완료: {report.metrics.doneCount}</p>
           <p>미완료: {report.metrics.activeCount}</p>
         </section>
+
+        {isAiEvaluating && (
+          <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm text-calm">
+              AI 상세 평가 생성 중입니다. 잠시만 기다려주세요.
+            </p>
+          </section>
+        )}
+
+        {!isAiEvaluating && report.aiSuggestion && (
+          <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <h3 className="text-sm font-semibold text-ink">AI 상세 개선안</h3>
+            <p className="text-sm text-calm">{report.aiSuggestion.diagnosis}</p>
+
+            <div className="space-y-1">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-calm">
+                Risk Drivers
+              </h4>
+              <ul className="space-y-1">
+                {report.aiSuggestion.riskDrivers.map((driver) => (
+                  <li key={driver} className="text-sm text-ink">
+                    {driver}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-calm">
+                Tomorrow Focus Plan
+              </h4>
+              <ol className="list-decimal space-y-1 pl-5">
+                {report.aiSuggestion.tomorrowFocusPlan.map((plan) => (
+                  <li key={plan} className="text-sm text-ink">
+                    {plan}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-calm">
+                Schedule Template
+              </h4>
+              <ul className="space-y-1">
+                {report.aiSuggestion.scheduleTemplate.map((slot) => (
+                  <li key={slot} className="text-sm text-ink">
+                    {slot}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-calm">
+                Stop Rules
+              </h4>
+              <ul className="space-y-1">
+                {report.aiSuggestion.stopRules.map((rule) => (
+                  <li key={rule} className="text-sm text-ink">
+                    {rule}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {!isAiEvaluating && !report.aiSuggestion && aiAccessMode === "none" && (
+          <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm text-calm">
+              AI 상세 평가는 AI 키를 등록하거나 Pro 결제를 완료하면 사용할 수
+              있습니다.
+            </p>
+          </section>
+        )}
 
         <Button
           type="button"

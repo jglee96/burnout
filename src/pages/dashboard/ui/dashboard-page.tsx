@@ -3,13 +3,16 @@ import { CreateTaskForm } from "@/features/task/create-task/ui/create-task-form"
 import { calculateBurnoutRisk } from "@/entities/task/model/calculate-burnout-risk";
 import { evaluateDay } from "@/entities/task/model/evaluate-day";
 import type {
+  AiAccessMode,
   DayEvaluationReport,
   Task,
   TaskPriority,
   TaskStatus
 } from "@/entities/task/model/types";
+import { getAiDetailedSuggestion } from "@/shared/api/ai-evaluation-client";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
+import { AiAccessPanel } from "@/widgets/ai-access/ui/ai-access-panel";
 import { DayEndReport } from "@/widgets/day-session/ui/day-end-report";
 import { DayStartPanel } from "@/widgets/day-session/ui/day-start-panel";
 import { BurnoutSummary } from "@/widgets/burnout-summary/ui/burnout-summary";
@@ -49,13 +52,42 @@ function startOfTodayIso() {
 
 type DaySessionState = "before-work" | "working" | "after-work";
 
+const AI_KEY_STORAGE_KEY = "burnout-ai-key";
+const AI_PRO_STORAGE_KEY = "burnout-ai-pro";
+
+function readStoredAiKey(): string {
+  try {
+    return window.localStorage.getItem(AI_KEY_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function readStoredAiProFlag(): boolean {
+  try {
+    return window.localStorage.getItem(AI_PRO_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 export function DashboardPage() {
   const [daySessionState, setDaySessionState] =
     useState<DaySessionState>("before-work");
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [storedAiKey, setStoredAiKey] = useState<string>(readStoredAiKey);
+  const [hasProAccess, setHasProAccess] =
+    useState<boolean>(readStoredAiProFlag);
+  const [isAiEvaluating, setIsAiEvaluating] = useState(false);
   const [dayEndReport, setDayEndReport] = useState<DayEvaluationReport | null>(
     null
   );
+
+  const aiAccessMode: AiAccessMode = hasProAccess
+    ? "pro"
+    : storedAiKey
+      ? "byok"
+      : "none";
 
   const todayIso = startOfTodayIso();
   const completedTodayCount = tasks.filter(
@@ -113,17 +145,64 @@ export function DashboardPage() {
   };
 
   const onFinishDay = () => {
-    const report = evaluateDay({
+    const report: DayEvaluationReport = evaluateDay({
       tasks,
       completedTodayCount,
       burnoutRiskReport: burnoutReport
     });
     setDayEndReport(report);
     setDaySessionState("after-work");
+
+    if (aiAccessMode === "none") {
+      return;
+    }
+
+    setIsAiEvaluating(true);
+    void getAiDetailedSuggestion({
+      accessMode: aiAccessMode,
+      apiKey: aiAccessMode === "byok" ? storedAiKey : undefined,
+      tasks,
+      completedTodayCount,
+      burnoutRiskReport: burnoutReport,
+      dayEvaluationReport: report
+    })
+      .then((aiSuggestion) => {
+        setDayEndReport((current) =>
+          current
+            ? {
+                ...current,
+                aiSuggestion
+              }
+            : current
+        );
+      })
+      .finally(() => {
+        setIsAiEvaluating(false);
+      });
   };
 
   const onPrepareNextDay = () => {
     setDaySessionState("before-work");
+  };
+
+  const onSaveAiKey = (nextAiKey: string) => {
+    setStoredAiKey(nextAiKey);
+    window.localStorage.setItem(AI_KEY_STORAGE_KEY, nextAiKey);
+  };
+
+  const onClearAiKey = () => {
+    setStoredAiKey("");
+    window.localStorage.removeItem(AI_KEY_STORAGE_KEY);
+  };
+
+  const onActivateProAccess = () => {
+    setHasProAccess(true);
+    window.localStorage.setItem(AI_PRO_STORAGE_KEY, "true");
+  };
+
+  const onDeactivateProAccess = () => {
+    setHasProAccess(false);
+    window.localStorage.removeItem(AI_PRO_STORAGE_KEY);
   };
 
   return (
@@ -139,6 +218,15 @@ export function DashboardPage() {
         </p>
       </header>
       <InfoDeskHeader />
+      <AiAccessPanel
+        accessMode={aiAccessMode}
+        hasSavedApiKey={Boolean(storedAiKey)}
+        hasProAccess={hasProAccess}
+        onSaveApiKey={onSaveAiKey}
+        onClearApiKey={onClearAiKey}
+        onActivateProAccess={onActivateProAccess}
+        onDeactivateProAccess={onDeactivateProAccess}
+      />
 
       {daySessionState === "before-work" && (
         <DayStartPanel onStartDay={onStartDay} />
@@ -178,6 +266,8 @@ export function DashboardPage() {
       {daySessionState === "after-work" && dayEndReport && (
         <DayEndReport
           report={dayEndReport}
+          aiAccessMode={aiAccessMode}
+          isAiEvaluating={isAiEvaluating}
           onPrepareNextDay={onPrepareNextDay}
         />
       )}
