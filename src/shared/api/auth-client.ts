@@ -31,4 +31,3 @@ export async function getCurrentSession() {
   }
   return data.session;
 }
-

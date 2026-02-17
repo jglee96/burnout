@@ -30,10 +30,7 @@ interface AiEvaluatePayload {
   };
 }
 
-function json(
-  data: unknown,
-  init: ResponseInit = { status: 200 }
-): Response {
+function json(data: unknown, init: ResponseInit = { status: 200 }): Response {
   return new Response(JSON.stringify(data), {
     ...init,
     headers: {
@@ -299,4 +296,3 @@ export default {
     return json({ error: "Not found" }, { status: 404 });
   }
 };
-
