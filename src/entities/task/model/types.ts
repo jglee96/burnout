@@ -18,3 +18,18 @@ export interface BurnoutRiskReport {
   score: number;
   reasons: string[];
 }
+
+export interface DayEvaluationReport {
+  summary: string;
+  observations: string[];
+  tomorrowActions: string[];
+  metrics: {
+    totalCount: number;
+    doneCount: number;
+    activeCount: number;
+    highPriorityActiveCount: number;
+    completedTodayCount: number;
+    burnoutRiskLevel: BurnoutRiskLevel;
+    burnoutRiskScore: number;
+  };
+}

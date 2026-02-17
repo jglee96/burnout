@@ -1,12 +1,19 @@
 import { useMemo, useState } from "react";
 import { CreateTaskForm } from "@/features/task/create-task/ui/create-task-form";
 import { calculateBurnoutRisk } from "@/entities/task/model/calculate-burnout-risk";
+import { evaluateDay } from "@/entities/task/model/evaluate-day";
 import type {
+  DayEvaluationReport,
   Task,
   TaskPriority,
   TaskStatus
 } from "@/entities/task/model/types";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent } from "@/shared/ui/card";
+import { DayEndReport } from "@/widgets/day-session/ui/day-end-report";
+import { DayStartPanel } from "@/widgets/day-session/ui/day-start-panel";
 import { BurnoutSummary } from "@/widgets/burnout-summary/ui/burnout-summary";
+import { InfoDeskHeader } from "@/widgets/info-desk/ui/info-desk-header";
 import { TaskBoard } from "@/widgets/task-board/ui/task-board";
 
 const initialTasks: Task[] = [
@@ -40,8 +47,15 @@ function startOfTodayIso() {
   return now.toISOString();
 }
 
+type DaySessionState = "before-work" | "working" | "after-work";
+
 export function DashboardPage() {
+  const [daySessionState, setDaySessionState] =
+    useState<DaySessionState>("before-work");
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [dayEndReport, setDayEndReport] = useState<DayEvaluationReport | null>(
+    null
+  );
 
   const todayIso = startOfTodayIso();
   const completedTodayCount = tasks.filter(
@@ -49,7 +63,7 @@ export function DashboardPage() {
       task.status === "done" && task.completedAt && task.completedAt >= todayIso
   ).length;
 
-  const report = useMemo(
+  const burnoutReport = useMemo(
     () => calculateBurnoutRisk({ tasks, completedTodayCount }),
     [tasks, completedTodayCount]
   );
@@ -93,6 +107,25 @@ export function DashboardPage() {
     );
   };
 
+  const onStartDay = () => {
+    setDaySessionState("working");
+    setDayEndReport(null);
+  };
+
+  const onFinishDay = () => {
+    const report = evaluateDay({
+      tasks,
+      completedTodayCount,
+      burnoutRiskReport: burnoutReport
+    });
+    setDayEndReport(report);
+    setDaySessionState("after-work");
+  };
+
+  const onPrepareNextDay = () => {
+    setDaySessionState("before-work");
+  };
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="space-y-2">
@@ -105,16 +138,49 @@ export function DashboardPage() {
           momentum before overload builds up.
         </p>
       </header>
+      <InfoDeskHeader />
 
-      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <CreateTaskForm onCreateTask={onCreateTask} />
-        <BurnoutSummary
-          report={report}
-          completedTodayCount={completedTodayCount}
+      {daySessionState === "before-work" && (
+        <DayStartPanel onStartDay={onStartDay} />
+      )}
+
+      {daySessionState === "working" && (
+        <>
+          <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <CreateTaskForm onCreateTask={onCreateTask} />
+            <BurnoutSummary
+              report={burnoutReport}
+              completedTodayCount={completedTodayCount}
+            />
+          </section>
+
+          <TaskBoard tasks={tasks} onStatusChange={onStatusChange} />
+
+          <Card>
+            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-calm">
+                퇴근 전 하루를 마감하면, 완료/미완료 비율과 위험도를 기준으로
+                내일 개선 계획을 제안합니다.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onFinishDay}
+                aria-label="하루 마무리하기"
+              >
+                하루 마무리하기
+              </Button>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {daySessionState === "after-work" && dayEndReport && (
+        <DayEndReport
+          report={dayEndReport}
+          onPrepareNextDay={onPrepareNextDay}
         />
-      </section>
-
-      <TaskBoard tasks={tasks} onStatusChange={onStatusChange} />
+      )}
     </main>
   );
 }
