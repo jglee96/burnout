@@ -2,6 +2,23 @@
 
 Burnout Guard is a web app that helps office workers run a daily `start → execute → wrap-up` loop, then finish the day with a neutral review and actionable improvements for tomorrow.
 
+Korean README: [README.md](./README.md)
+
+## Table of Contents
+
+- [Core Features](#core-features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Scripts](#scripts)
+- [Test Checklist](#test-checklist)
+- [Supabase Setup](#supabase-setup)
+- [Cloudflare Deployment](#cloudflare-deployment)
+- [PWA](#pwa)
+- [Security Notes](#security-notes)
+- [References](#references)
+
 ## Core Features
 
 - Start/end-of-day session flow
