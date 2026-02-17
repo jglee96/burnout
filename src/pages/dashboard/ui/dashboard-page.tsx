@@ -61,6 +61,7 @@ const AI_KEY_STORAGE_KEY = "burnout-ai-key";
 const AI_PRO_STORAGE_KEY = "burnout-ai-pro";
 const DAY_SESSION_STORAGE_KEY = "burnout-day-session";
 const LOCAL_AUTH_BYPASS_KEY = "burnout-local-auth-bypass";
+const TASKS_STORAGE_KEY = "burnout-tasks";
 
 function dateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10);
@@ -69,6 +70,33 @@ function dateKey(date = new Date()): string {
 function isDaySessionState(value: unknown): value is DaySessionState {
   return (
     value === "before-work" || value === "working" || value === "after-work"
+  );
+}
+
+function isTaskPriority(value: unknown): value is TaskPriority {
+  return value === "low" || value === "medium" || value === "high";
+}
+
+function isTaskStatus(value: unknown): value is TaskStatus {
+  return value === "todo" || value === "doing" || value === "done";
+}
+
+function isTask(value: unknown): value is Task {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const hasValidCompletedAt =
+    record.completedAt === undefined || typeof record.completedAt === "string";
+
+  return (
+    typeof record.id === "string" &&
+    typeof record.title === "string" &&
+    isTaskPriority(record.priority) &&
+    isTaskStatus(record.status) &&
+    typeof record.createdAt === "string" &&
+    hasValidCompletedAt
   );
 }
 
@@ -85,6 +113,28 @@ function readStoredAiProFlag(): boolean {
     return window.localStorage.getItem(AI_PRO_STORAGE_KEY) === "true";
   } catch {
     return false;
+  }
+}
+
+function readStoredTasks(): Task[] {
+  try {
+    const raw = window.localStorage.getItem(TASKS_STORAGE_KEY);
+    if (!raw) {
+      return initialTasks;
+    }
+
+    const parsed = JSON.parse(raw) as { date?: unknown; tasks?: unknown };
+    if (parsed.date !== dateKey() || !Array.isArray(parsed.tasks)) {
+      return initialTasks;
+    }
+
+    if (!parsed.tasks.every((task) => isTask(task))) {
+      return initialTasks;
+    }
+
+    return parsed.tasks;
+  } catch {
+    return initialTasks;
   }
 }
 
@@ -115,6 +165,13 @@ function writeStoredDaySessionState(state: DaySessionState) {
   );
 }
 
+function writeStoredTasks(tasks: Task[]) {
+  window.localStorage.setItem(
+    TASKS_STORAGE_KEY,
+    JSON.stringify({ date: dateKey(), tasks })
+  );
+}
+
 function readLocalAuthBypassFlag(): boolean {
   try {
     return window.localStorage.getItem(LOCAL_AUTH_BYPASS_KEY) === "true";
@@ -128,7 +185,7 @@ export function DashboardPage() {
     readStoredDaySessionState
   );
   const [activeSection, setActiveSection] = useState<AppSection>("day");
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(readStoredTasks);
   const [storedAiKey, setStoredAiKey] = useState<string>(readStoredAiKey);
   const [hasProAccess, setHasProAccess] =
     useState<boolean>(readStoredAiProFlag);
@@ -270,6 +327,10 @@ export function DashboardPage() {
   useEffect(() => {
     writeStoredDaySessionState(daySessionState);
   }, [daySessionState]);
+
+  useEffect(() => {
+    writeStoredTasks(tasks);
+  }, [tasks]);
 
   useEffect(() => {
     let isMounted = true;
@@ -499,6 +560,25 @@ export function DashboardPage() {
               isAiEvaluating={isAiEvaluating}
               onPrepareNextDay={onPrepareNextDay}
             />
+          )}
+
+          {daySessionState === "after-work" && !dayEndReport && (
+            <Card>
+              <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-calm">
+                  종료 평가는 새로고침으로 초기화되었습니다. 다시 시작해서 오늘
+                  작업을 이어갈 수 있습니다.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onPrepareNextDay}
+                  aria-label="다시 시작하기"
+                >
+                  다시 시작하기
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </>
       )}
