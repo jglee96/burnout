@@ -1,4 +1,5 @@
 import type { Task, TaskPriority, TaskStatus } from "@/entities/task/model/types";
+import { isDevOrTestRuntime } from "@/shared/lib/env/runtime-mode";
 import type { DaySessionState } from "./types";
 
 const AI_KEY_STORAGE_KEY = "burnout-ai-key";
@@ -7,7 +8,7 @@ const DAY_SESSION_STORAGE_KEY = "burnout-day-session";
 const LOCAL_AUTH_BYPASS_KEY = "burnout-local-auth-bypass";
 const TASKS_STORAGE_KEY = "burnout-tasks";
 
-const INITIAL_TASKS: Task[] = [
+const DEV_SEED_TASKS: Task[] = [
   {
     id: "seed-1",
     title: "Ship today's focused feature",
@@ -31,6 +32,10 @@ const INITIAL_TASKS: Task[] = [
     completedAt: "2026-02-17T11:00:00.000Z"
   }
 ];
+
+function defaultTasks(): Task[] {
+  return isDevOrTestRuntime ? DEV_SEED_TASKS : [];
+}
 
 function dateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10);
@@ -119,21 +124,21 @@ export function readStoredTasks(): Task[] {
   try {
     const raw = window.localStorage.getItem(TASKS_STORAGE_KEY);
     if (!raw) {
-      return INITIAL_TASKS;
+      return defaultTasks();
     }
 
     const parsed = JSON.parse(raw) as { date?: unknown; tasks?: unknown };
     if (parsed.date !== dateKey() || !Array.isArray(parsed.tasks)) {
-      return INITIAL_TASKS;
+      return defaultTasks();
     }
 
     if (!parsed.tasks.every((task) => isTask(task))) {
-      return INITIAL_TASKS;
+      return defaultTasks();
     }
 
     return parsed.tasks;
   } catch {
-    return INITIAL_TASKS;
+    return defaultTasks();
   }
 }
 

@@ -37,6 +37,7 @@ import { LandingPage } from "@/pages/landing";
 import { PricingPage } from "@/pages/pricing";
 import { SettingsPage } from "@/pages/settings";
 import { getAiDetailedSuggestion } from "@/shared/api/ai-evaluation-client";
+import { isDevOrTestRuntime } from "@/shared/lib/env/runtime-mode";
 import { useAppLocale } from "@/shared/lib/i18n/locale";
 import { navigate } from "@/shared/lib/router/navigation";
 import { Badge } from "@/shared/ui/badge";
@@ -84,7 +85,7 @@ export function DashboardPage() {
     null
   );
   const copy = useMemo(() => getDashboardCopy(locale), [locale]);
-  const canUseLocalBypass = import.meta.env.VITE_APP_ENV !== "production";
+  const canUseLocalBypass = isDevOrTestRuntime;
 
   const aiAccessMode: AiAccessMode = hasProAccess
     ? "pro"
@@ -232,11 +233,19 @@ export function DashboardPage() {
   }, [tasks]);
 
   useEffect(() => {
+    if (canUseLocalBypass || !isLocalAuthBypass) {
+      return;
+    }
+    clearLocalAuthBypassFlag();
+    setIsLocalAuthBypass(false);
+  }, [canUseLocalBypass, isLocalAuthBypass]);
+
+  useEffect(() => {
     let isMounted = true;
     let unsubscribe: (() => void) | undefined;
 
     async function bootstrapAuthState() {
-      if (isLocalAuthBypass) {
+      if (canUseLocalBypass && isLocalAuthBypass) {
         setAuthStatus("authenticated");
         setAuthUserEmail("local-test@burnout.dev");
         return;
@@ -296,7 +305,7 @@ export function DashboardPage() {
       isMounted = false;
       unsubscribe?.();
     };
-  }, [copy.authInitError, isLocalAuthBypass]);
+  }, [canUseLocalBypass, copy.authInitError, isLocalAuthBypass]);
 
   const onSignInWithGoogle = async () => {
     setIsAuthBusy(true);
@@ -313,6 +322,9 @@ export function DashboardPage() {
   };
 
   const onContinueWithLocalBypass = () => {
+    if (!canUseLocalBypass) {
+      return;
+    }
     saveLocalAuthBypassFlag();
     setIsLocalAuthBypass(true);
     setAuthStatus("authenticated");
