@@ -1,5 +1,7 @@
+import { useState } from "react";
 import type { Task, TaskStatus } from "@/entities/task/model/types";
 import { TaskItem } from "@/entities/task";
+import { cn } from "@/shared/lib/utils/cn";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
 type TaskBoardState = "ready" | "loading" | "error" | "offline";
@@ -49,6 +51,9 @@ export function TaskBoard({
   tasks,
   onStatusChange
 }: TaskBoardProps) {
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
+
   if (state === "loading") {
     return (
       <PlaceholderState
@@ -86,21 +91,67 @@ export function TaskBoard({
     { title: "Done", status: "done" }
   ];
 
+  const onDropToSection = (status: TaskStatus, taskId: string | null) => {
+    if (!taskId) {
+      return;
+    }
+
+    const currentTask = tasks.find((task) => task.id === taskId);
+    if (!currentTask || currentTask.status === status) {
+      return;
+    }
+
+    onStatusChange(taskId, status);
+  };
+
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {sections.map((section) => (
-        <Card key={section.status}>
+        <Card
+          key={section.status}
+          data-testid={`task-column-${section.status}`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+            if (dragOverStatus !== section.status) {
+              setDragOverStatus(section.status);
+            }
+          }}
+          onDragLeave={() => {
+            if (dragOverStatus === section.status) {
+              setDragOverStatus(null);
+            }
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            const droppedTaskId =
+              event.dataTransfer.getData("text/task-id") || draggedTaskId;
+            onDropToSection(section.status, droppedTaskId || null);
+            setDraggedTaskId(null);
+            setDragOverStatus(null);
+          }}
+          className={cn(
+            "transition-colors",
+            dragOverStatus === section.status && "border-sky-300 bg-sky-50/60"
+          )}
+        >
           <CardHeader>
             <CardTitle>{section.title}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="min-h-40 space-y-3">
             {tasks
               .filter((task) => task.status === section.status)
               .map((task) => (
                 <TaskItem
                   key={task.id}
                   task={task}
-                  onStatusChange={onStatusChange}
+                  draggable
+                  isDragging={draggedTaskId === task.id}
+                  onDragStart={setDraggedTaskId}
+                  onDragEnd={() => {
+                    setDraggedTaskId(null);
+                    setDragOverStatus(null);
+                  }}
                 />
               ))}
             {tasks.every((task) => task.status !== section.status) && (
