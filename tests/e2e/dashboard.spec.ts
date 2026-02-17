@@ -4,7 +4,7 @@ test("dashboard renders and accepts a new task", async ({ page }) => {
   await page.goto("/app/day");
 
   await expect(
-    page.getByRole("heading", { name: "Burnout Guard" })
+    page.getByRole("heading", { name: "Burnout Guard", exact: true })
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Burnout Guard 시작하기" })

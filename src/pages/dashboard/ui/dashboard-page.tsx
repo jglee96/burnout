@@ -11,17 +11,18 @@ import type {
 } from "@/entities/task/model/types";
 import { getAiDetailedSuggestion } from "@/shared/api/ai-evaluation-client";
 import { navigate } from "@/shared/lib/router/navigation";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { DayEndReport } from "@/widgets/day-session/ui/day-end-report";
 import { DayStartPanel } from "@/widgets/day-session/ui/day-start-panel";
 import { BurnoutSummary } from "@/widgets/burnout-summary/ui/burnout-summary";
+import { AppHeader } from "@/widgets/header/ui/app-header";
 import { InfoDeskHeader } from "@/widgets/info-desk/ui/info-desk-header";
 import { LandingPage } from "@/pages/landing/ui/landing-page";
 import { PricingPage } from "@/pages/pricing/ui/pricing-page";
 import { SettingsPage } from "@/pages/settings/ui/settings-page";
 import { TaskBoard } from "@/widgets/task-board/ui/task-board";
-import { AppToolbar } from "@/widgets/toolbar/ui/app-toolbar";
 
 const initialTasks: Task[] = [
   {
@@ -56,7 +57,7 @@ function startOfTodayIso() {
 
 type DaySessionState = "before-work" | "working" | "after-work";
 type AuthStatus = "checking" | "anonymous" | "authenticated" | "error";
-type AppSection = "day" | "pricing" | "settings";
+export type AppSection = "day" | "pricing" | "settings";
 
 const AI_KEY_STORAGE_KEY = "burnout-ai-key";
 const AI_PRO_STORAGE_KEY = "burnout-ai-pro";
@@ -72,16 +73,6 @@ function sectionFromPath(pathname: string): AppSection {
     return "settings";
   }
   return "day";
-}
-
-function pathFromSection(section: AppSection): string {
-  if (section === "pricing") {
-    return "/app/pricing";
-  }
-  if (section === "settings") {
-    return "/app/settings";
-  }
-  return "/app/day";
 }
 
 function dateKey(date = new Date()): string {
@@ -480,15 +471,28 @@ export function DashboardPage() {
 
   if (authStatus === "checking") {
     return (
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-        <header className="space-y-2">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-calm">
-            Daily Resilience Dashboard
-          </p>
-          <h1 className="text-3xl font-semibold leading-tight">
-            Burnout Guard
-          </h1>
-        </header>
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-3 sm:px-6">
+        <AppHeader
+          activeSection={activeSection}
+          isAuthenticated={false}
+          userEmail=""
+          hasProAccess={hasProAccess}
+          isAuthBusy={isAuthBusy}
+          onOpenDay={() => {
+            setActiveSection("day");
+            navigate("/app/day");
+          }}
+          onOpenPricing={() => {
+            setActiveSection("pricing");
+            navigate("/app/pricing");
+          }}
+          onOpenSettings={() => {
+            setActiveSection("settings");
+            navigate("/app/settings");
+          }}
+          onSignOut={onSignOutGoogle}
+          onSignIn={onSignInWithGoogle}
+        />
         <Card>
           <CardContent className="p-5 text-sm text-calm">
             로그인 상태를 확인하는 중입니다.
@@ -498,14 +502,17 @@ export function DashboardPage() {
     );
   }
 
-  if (authStatus === "anonymous" || authStatus === "error") {
+  if (
+    (authStatus === "anonymous" || authStatus === "error") &&
+    activeSection !== "pricing"
+  ) {
     return (
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6">
         <header className="space-y-2">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-calm">
+          <p className="text-sm font-medium uppercase tracking-[0.16em] text-calm">
             Daily Resilience Dashboard
           </p>
-          <h1 className="text-3xl font-semibold leading-tight">
+          <h1 className="font-['Avenir_Next','Segoe_UI',sans-serif] text-3xl font-semibold leading-tight">
             Burnout Guard
           </h1>
           <p className="max-w-2xl text-sm text-calm">
@@ -525,32 +532,60 @@ export function DashboardPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="space-y-2">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-calm">
-          Daily Resilience Dashboard
-        </p>
-        <h1 className="text-3xl font-semibold leading-tight">Burnout Guard</h1>
-        <p className="max-w-2xl text-sm text-calm">
-          Keep one clear priority, cap in-progress work, and review completion
-          momentum before overload builds up.
-        </p>
-      </header>
-      <AppToolbar
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-3 sm:px-6">
+      <AppHeader
         activeSection={activeSection}
+        isAuthenticated={authStatus === "authenticated"}
         userEmail={authUserEmail}
         hasProAccess={hasProAccess}
-        onChangeSection={(section) => {
-          setActiveSection(section);
-          navigate(pathFromSection(section));
+        isAuthBusy={isAuthBusy}
+        onOpenDay={() => {
+          setActiveSection("day");
+          navigate("/app/day");
+        }}
+        onOpenPricing={() => {
+          setActiveSection("pricing");
+          navigate("/app/pricing");
+        }}
+        onOpenSettings={() => {
+          setActiveSection("settings");
+          navigate("/app/settings");
         }}
         onSignOut={onSignOutGoogle}
-        isSignOutBusy={isAuthBusy}
+        onSignIn={onSignInWithGoogle}
       />
-      <InfoDeskHeader />
 
       {activeSection === "day" && (
         <>
+          <header className="space-y-3 pt-1">
+            <Badge variant="secondary" className="w-fit">
+              Workspace
+            </Badge>
+            <h1 className="font-['Avenir_Next','Segoe_UI',sans-serif] text-3xl font-semibold leading-tight sm:text-4xl">
+              Burnout Guard App
+            </h1>
+            <p className="max-w-2xl text-sm text-calm">
+              Keep one clear priority, cap in-progress work, and review
+              completion momentum before overload builds up.
+            </p>
+          </header>
+
+          <InfoDeskHeader />
+
+          <Card className="border-slate-200/90 bg-white/80">
+            <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-calm">
+                {daySessionState === "before-work" &&
+                  "오늘 업무를 시작할 준비 단계입니다."}
+                {daySessionState === "working" &&
+                  "업무 진행 중입니다. Doing을 최소화해 집중을 유지하세요."}
+                {daySessionState === "after-work" &&
+                  "업무 마무리 상태입니다. 평가를 확인하고 다음 날을 준비하세요."}
+              </p>
+              <Badge variant="secondary">{daySessionState}</Badge>
+            </CardContent>
+          </Card>
+
           {daySessionState === "before-work" && (
             <DayStartPanel onStartDay={onStartDay} />
           )}
@@ -625,12 +660,22 @@ export function DashboardPage() {
       )}
 
       {activeSection === "settings" && (
-        <SettingsPage
-          userEmail={authUserEmail}
-          hasSavedApiKey={Boolean(storedAiKey)}
-          onSaveApiKey={onSaveAiKey}
-          onClearApiKey={onClearAiKey}
-        />
+        <>
+          <header className="space-y-3 pt-1">
+            <Badge variant="secondary" className="w-fit">
+              Workspace
+            </Badge>
+            <h1 className="font-['Avenir_Next','Segoe_UI',sans-serif] text-3xl font-semibold leading-tight sm:text-4xl">
+              개인 설정
+            </h1>
+          </header>
+          <SettingsPage
+            userEmail={authUserEmail}
+            hasSavedApiKey={Boolean(storedAiKey)}
+            onSaveApiKey={onSaveAiKey}
+            onClearApiKey={onClearAiKey}
+          />
+        </>
       )}
     </main>
   );

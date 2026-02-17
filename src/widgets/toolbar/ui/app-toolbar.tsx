@@ -28,16 +28,18 @@ export function AppToolbar({
   isSignOutBusy
 }: AppToolbarProps) {
   return (
-    <Card>
+    <Card className="border-slate-200/80 bg-white/80">
       <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <p className="max-w-full truncate text-sm text-calm">{userEmail}</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <p className="max-w-full truncate text-sm font-medium text-ink/85">
+            {userEmail}
+          </p>
           <Badge variant={hasProAccess ? "warning" : "secondary"}>
             {hasProAccess ? "Pro" : "Free"}
           </Badge>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200/90 bg-white p-1">
           {sectionItems.map((item) => (
             <Button
               key={item.key}
@@ -50,6 +52,8 @@ export function AppToolbar({
               {item.label}
             </Button>
           ))}
+        </div>
+        <div>
           <Button
             type="button"
             size="sm"

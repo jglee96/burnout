@@ -61,7 +61,7 @@ export function ProductPage() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => navigate("/app/pricing")}
+              onClick={() => navigate("/pricing")}
             >
               Pricing
             </Button>
@@ -102,7 +102,7 @@ export function ProductPage() {
                 type="button"
                 size="lg"
                 variant="outline"
-                onClick={() => navigate("/app/pricing")}
+                onClick={() => navigate("/pricing")}
               >
                 요금제 보기
               </Button>
